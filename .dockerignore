@@ -1,0 +1,12 @@
+node_modules
+packages/*/node_modules
+packages/*/dist
+.git
+.gitignore
+.DS_Store
+*.log
+coverage
+build
+dist
+.env
+packages/*/.env
