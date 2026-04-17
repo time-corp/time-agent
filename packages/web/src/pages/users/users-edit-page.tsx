@@ -7,8 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useGetUserQuery, useUpdateUserMutation } from "@/hooks/useUsers"
-import { UserForm } from "@/pages/users/user-form"
-import { updateUserSchema, type CreateUserValues } from "@/pages/users/user-schema"
+import { UserForm } from "@/pages/users/components/user-form"
+import {
+  updateUserSchema,
+  type CreateUserValues,
+} from "@/pages/users/schemas/user-schema"
 
 type UsersEditPageProps = {
   userId: string

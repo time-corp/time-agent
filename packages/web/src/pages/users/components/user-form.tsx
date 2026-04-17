@@ -7,7 +7,7 @@ import { ControlledField } from "@/components/form/controlled-field"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import type { CreateUserValues } from "@/pages/users/user-schema"
+import type { CreateUserValues } from "@/pages/users/schemas/user-schema"
 
 type UserFormProps = {
   mode: "create" | "update"

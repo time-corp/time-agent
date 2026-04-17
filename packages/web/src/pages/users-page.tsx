@@ -26,7 +26,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group"
 import { useDeleteUsersMutation } from "@/hooks/useUsers"
-import { useUsersTable } from "@/pages/users/use-users-table"
+import { useUsersTable } from "@/pages/users/hooks/use-users-table"
 import {
   FilterIcon,
   PlusIcon,

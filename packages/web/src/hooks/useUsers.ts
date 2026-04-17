@@ -1,29 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { CreateUserInput, UpdateUserInput, User } from "@time/shared";
+
+export type { User } from "@time/shared";
 
 const USERS_API_BASE = "/api/v1/users";
-
-export type User = {
-  id: string;
-  username: string;
-  email: string;
-  fullname: string;
-  createdAt?: string | number | Date;
-  updatedAt?: string | number | Date;
-};
-
-type CreateUserPayload = {
-  username: string;
-  email: string;
-  password: string;
-  fullname: string;
-};
-
-type UpdateUserPayload = {
-  username?: string;
-  email?: string;
-  fullname?: string;
-  password?: string;
-};
 
 const usersQueryKey = ["users"] as const;
 
@@ -65,7 +45,7 @@ export const useCreateUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateUserPayload) =>
+    mutationFn: (payload: CreateUserInput) =>
       request<User>(USERS_API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +61,7 @@ export const useUpdateUserMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserInput }) =>
       request<User>(`${USERS_API_BASE}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

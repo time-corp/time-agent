@@ -11,7 +11,7 @@ import { useDeferredValue, useMemo, useState } from "react"
 
 import { useDataTable } from "@/components/data-table/use-data-table"
 import { useUsersQuery } from "@/hooks/useUsers"
-import { getUserColumns } from "@/pages/users/columns"
+import { getUserColumns } from "@/pages/users/components/columns"
 
 const pageSizeOptions = [10, 20, 50] as const
 

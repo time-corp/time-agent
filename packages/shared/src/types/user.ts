@@ -1,5 +1,1 @@
-export type User = {
-  id: string;
-  email: string;
-  createdAt: Date;
-};
+export type { CreateUserInput, UpdateUserInput, User } from "../schemas/user";

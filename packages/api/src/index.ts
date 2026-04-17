@@ -4,7 +4,7 @@ import { logger } from "hono/logger";
 import { healthRoute } from "./routes/health";
 import { sseRoute } from "./routes/sse";
 import { wsRoute, websocket } from "./routes/ws";
-import { usersRoute } from "./routes/users";
+import { usersRoute } from "./routes/users/route";
 import { traceMiddleware } from "./middleware/trace";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 

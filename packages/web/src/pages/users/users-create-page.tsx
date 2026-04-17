@@ -5,8 +5,11 @@ import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
 import { useCreateUserMutation } from "@/hooks/useUsers"
-import { UserForm } from "@/pages/users/user-form"
-import { createUserSchema, type CreateUserValues } from "@/pages/users/user-schema"
+import { UserForm } from "@/pages/users/components/user-form"
+import {
+  createUserSchema,
+  type CreateUserValues,
+} from "@/pages/users/schemas/user-schema"
 
 export function UsersCreatePage() {
   const navigate = useNavigate()

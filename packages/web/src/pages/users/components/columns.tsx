@@ -7,10 +7,10 @@ import {
 } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
-import type { User } from "@/hooks/useUsers"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { User } from "@/hooks/useUsers"
 
 type UsersColumnsOptions = {
   sorting: SortingState

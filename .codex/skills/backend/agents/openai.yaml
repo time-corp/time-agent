@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend"
+  short_description: "API conventions for this repo"
+  default_prompt: "Use $backend to implement or refactor backend code in this repository."

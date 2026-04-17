@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend"
+  short_description: "Web conventions for this repo"
+  default_prompt: "Use $frontend to implement or refactor frontend code in this repository."

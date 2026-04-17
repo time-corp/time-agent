@@ -1,1 +1,1 @@
-export type { User } from "./user";
+export type { CreateUserInput, UpdateUserInput, User } from "./user";
