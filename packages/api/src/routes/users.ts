@@ -3,6 +3,8 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "../db";
+import { AppError, ErrorCode } from "../lib/errors";
+import { ok, fail } from "../lib/response";
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(50),
@@ -18,20 +20,31 @@ const updateUserSchema = z.object({
   fullname: z.string().min(1).max(100).optional(),
 });
 
-// Strip password from response
 const safeUser = (user: typeof schema.users.$inferSelect) => {
   const { password: _, ...rest } = user;
   return rest;
 };
 
+const zodFail = zValidator("json", createUserSchema, (result, c) => {
+  if (!result.success) {
+    const message = result.error.issues.map((i) => i.message).join(", ");
+    return fail(c, ErrorCode.VALIDATION_ERROR, message, 400);
+  }
+});
+
+const zodFailUpdate = zValidator("json", updateUserSchema, (result, c) => {
+  if (!result.success) {
+    const message = result.error.issues.map((i) => i.message).join(", ");
+    return fail(c, ErrorCode.VALIDATION_ERROR, message, 400);
+  }
+});
+
 export const usersRoute = new Hono()
-  // GET /users
   .get("/", async (c) => {
     const rows = await db.select().from(schema.users);
-    return c.json(rows.map(safeUser));
+    return ok(c, rows.map(safeUser));
   })
 
-  // GET /users/:id
   .get("/:id", async (c) => {
     const id = c.req.param("id");
     const [user] = await db
@@ -39,12 +52,11 @@ export const usersRoute = new Hono()
       .from(schema.users)
       .where(eq(schema.users.id, id))
       .limit(1);
-    if (!user) return c.json({ error: "User not found" }, 404);
-    return c.json(safeUser(user));
+    if (!user) throw new AppError(ErrorCode.USER_NOT_FOUND, "User not found", 404);
+    return ok(c, safeUser(user));
   })
 
-  // POST /users
-  .post("/", zValidator("json", createUserSchema), async (c) => {
+  .post("/", zodFail, async (c) => {
     const body = c.req.valid("json");
     const id = crypto.randomUUID();
     const hashedPassword = await Bun.password.hash(body.password);
@@ -54,12 +66,11 @@ export const usersRoute = new Hono()
       .values({ ...body, id, password: hashedPassword })
       .returning();
 
-    if (!user) return c.json({ error: "Failed to create user" }, 500);
-    return c.json(safeUser(user), 201);
+    if (!user) throw new AppError(ErrorCode.USER_CREATE_FAILED, "Failed to create user", 500);
+    return ok(c, safeUser(user), 201);
   })
 
-  // PATCH /users/:id
-  .patch("/:id", zValidator("json", updateUserSchema), async (c) => {
+  .patch("/:id", zodFailUpdate, async (c) => {
     const id = c.req.param("id");
     const body = c.req.valid("json");
 
@@ -75,11 +86,10 @@ export const usersRoute = new Hono()
       .where(eq(schema.users.id, id))
       .returning();
 
-    if (!user) return c.json({ error: "User not found" }, 404);
-    return c.json(safeUser(user));
+    if (!user) throw new AppError(ErrorCode.USER_NOT_FOUND, "User not found", 404);
+    return ok(c, safeUser(user));
   })
 
-  // DELETE /users/:id
   .delete("/:id", async (c) => {
     const id = c.req.param("id");
     const [deleted] = await db
@@ -87,6 +97,6 @@ export const usersRoute = new Hono()
       .where(eq(schema.users.id, id))
       .returning();
 
-    if (!deleted) return c.json({ error: "User not found" }, 404);
-    return c.json({ success: true, id });
+    if (!deleted) throw new AppError(ErrorCode.USER_NOT_FOUND, "User not found", 404);
+    return ok(c, { id });
   });

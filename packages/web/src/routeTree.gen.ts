@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as RealtimeRouteImport } from './routes/realtime'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersIndexRouteImport } from './routes/users/index'
+import { Route as UsersCreateRouteImport } from './routes/users/create'
+import { Route as UsersUserIdEditRouteImport } from './routes/users/$userId/edit'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -28,35 +31,71 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersIndexRoute = UsersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => UsersRoute,
+} as any)
+const UsersCreateRoute = UsersCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => UsersRoute,
+} as any)
+const UsersUserIdEditRoute = UsersUserIdEditRouteImport.update({
+  id: '/$userId/edit',
+  path: '/$userId/edit',
+  getParentRoute: () => UsersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/realtime': typeof RealtimeRoute
-  '/users': typeof UsersRoute
+  '/users': typeof UsersRouteWithChildren
+  '/users/create': typeof UsersCreateRoute
+  '/users/': typeof UsersIndexRoute
+  '/users/$userId/edit': typeof UsersUserIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/realtime': typeof RealtimeRoute
-  '/users': typeof UsersRoute
+  '/users/create': typeof UsersCreateRoute
+  '/users': typeof UsersIndexRoute
+  '/users/$userId/edit': typeof UsersUserIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/realtime': typeof RealtimeRoute
-  '/users': typeof UsersRoute
+  '/users': typeof UsersRouteWithChildren
+  '/users/create': typeof UsersCreateRoute
+  '/users/': typeof UsersIndexRoute
+  '/users/$userId/edit': typeof UsersUserIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/realtime' | '/users'
+  fullPaths:
+    | '/'
+    | '/realtime'
+    | '/users'
+    | '/users/create'
+    | '/users/'
+    | '/users/$userId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/realtime' | '/users'
-  id: '__root__' | '/' | '/realtime' | '/users'
+  to: '/' | '/realtime' | '/users/create' | '/users' | '/users/$userId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/realtime'
+    | '/users'
+    | '/users/create'
+    | '/users/'
+    | '/users/$userId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RealtimeRoute: typeof RealtimeRoute
-  UsersRoute: typeof UsersRoute
+  UsersRoute: typeof UsersRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +121,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/': {
+      id: '/users/'
+      path: '/'
+      fullPath: '/users/'
+      preLoaderRoute: typeof UsersIndexRouteImport
+      parentRoute: typeof UsersRoute
+    }
+    '/users/create': {
+      id: '/users/create'
+      path: '/create'
+      fullPath: '/users/create'
+      preLoaderRoute: typeof UsersCreateRouteImport
+      parentRoute: typeof UsersRoute
+    }
+    '/users/$userId/edit': {
+      id: '/users/$userId/edit'
+      path: '/$userId/edit'
+      fullPath: '/users/$userId/edit'
+      preLoaderRoute: typeof UsersUserIdEditRouteImport
+      parentRoute: typeof UsersRoute
+    }
   }
 }
+
+interface UsersRouteChildren {
+  UsersCreateRoute: typeof UsersCreateRoute
+  UsersIndexRoute: typeof UsersIndexRoute
+  UsersUserIdEditRoute: typeof UsersUserIdEditRoute
+}
+
+const UsersRouteChildren: UsersRouteChildren = {
+  UsersCreateRoute: UsersCreateRoute,
+  UsersIndexRoute: UsersIndexRoute,
+  UsersUserIdEditRoute: UsersUserIdEditRoute,
+}
+
+const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RealtimeRoute: RealtimeRoute,
-  UsersRoute: UsersRoute,
+  UsersRoute: UsersRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

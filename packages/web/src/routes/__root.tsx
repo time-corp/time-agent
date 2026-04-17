@@ -1,6 +1,7 @@
 import { Outlet, createRootRoute, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "../components/app-shell";
+import { ThemeToggle } from "../components/theme-toggle";
 import { appSidebarSections } from "../constants/sidebar";
 
 function getSidebarMatch(pathname: string) {
@@ -32,6 +33,7 @@ function AppLayout() {
     <AppShell
       section={t(sidebarMatch.sectionKey)}
       title={t(sidebarMatch.titleKey)}
+      actions={<ThemeToggle />}
     >
       <Outlet />
     </AppShell>

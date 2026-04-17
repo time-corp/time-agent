@@ -5,6 +5,8 @@ import { healthRoute } from "./routes/health";
 import { sseRoute } from "./routes/sse";
 import { wsRoute, websocket } from "./routes/ws";
 import { usersRoute } from "./routes/users";
+import { traceMiddleware } from "./middleware/trace";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 
 const staticRoot = process.env["STATIC_ROOT"] ?? "/app/web-dist";
 const serveWeb = process.env["SERVE_WEB"] === "true";
@@ -13,10 +15,13 @@ const apiV1 = "/api/v1";
 const app = new Hono()
   .use("*", logger())
   .use("*", cors({ origin: process.env["WEB_URL"] ?? "http://localhost:5173" }))
+  .use("*", traceMiddleware)
   .route(`${apiV1}/health`, healthRoute)
   .route(`${apiV1}/sse`, sseRoute)
   .route(`${apiV1}/ws`, wsRoute)
-  .route(`${apiV1}/users`, usersRoute);
+  .route(`${apiV1}/users`, usersRoute)
+  .onError(errorHandler)
+  .notFound(notFoundHandler);
 
 if (serveWeb) {
   app.get("/assets/*", async (c) => {

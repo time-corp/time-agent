@@ -19,18 +19,22 @@ type CreateUserPayload = {
 };
 
 type UpdateUserPayload = {
-  username: string;
-  email: string;
-  fullname: string;
+  username?: string;
+  email?: string;
+  fullname?: string;
   password?: string;
 };
 
 const usersQueryKey = ["users"] as const;
 
+type ApiSuccess<T> = { success: true; traceId: string; data: T };
+type ApiError = { success: false; traceId: string; error: { code: string; message: string } };
+type ApiResponse<T> = ApiSuccess<T> | ApiError;
+
 const getErrorMessage = async (response: Response) => {
   try {
-    const data = (await response.json()) as { error?: string; message?: string };
-    return data.error ?? data.message ?? `Request failed: ${response.status}`;
+    const data = (await response.json()) as ApiError;
+    return data.error?.message ?? `Request failed: ${response.status}`;
   } catch {
     return `Request failed: ${response.status}`;
   }
@@ -47,7 +51,8 @@ const request = async <T>(input: RequestInfo | URL, init?: RequestInit) => {
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  const json = (await response.json()) as ApiResponse<T>;
+  return (json as ApiSuccess<T>).data;
 };
 
 export const useUsersQuery = () =>
@@ -94,6 +99,28 @@ export const useDeleteUserMutation = () => {
   return useMutation({
     mutationFn: (id: string) =>
       request<void>(`${USERS_API_BASE}/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: usersQueryKey });
+    },
+  });
+};
+
+export const useGetUserQuery = (id: string) =>
+  useQuery({
+    queryKey: [...usersQueryKey, id],
+    queryFn: () => request<User>(`${USERS_API_BASE}/${id}`),
+    enabled: Boolean(id),
+  });
+
+export const useDeleteUsersMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(
+        ids.map((id) => request<void>(`${USERS_API_BASE}/${id}`, { method: "DELETE" }))
+      );
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: usersQueryKey });
     },
