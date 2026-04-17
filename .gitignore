@@ -29,3 +29,9 @@ Thumbs.db
 
 # Exclude ui-test package
 packages/ui-test/
+
+# Artifact storage
+packages/api/.artifacts/
+
+# User-uploaded skills
+packages/api/.skills/

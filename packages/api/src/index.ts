@@ -1,10 +1,13 @@
+import { type HonoBindings, type HonoVariables, MastraServer } from "@mastra/hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { mastra } from "./mastra";
 import { healthRoute } from "./routes/health";
 import { sseRoute } from "./routes/sse";
 import { wsRoute, websocket } from "./routes/ws";
 import { usersRoute } from "./routes/users/route";
+import { artifactsRoute } from "./routes/artifacts";
 import { traceMiddleware } from "./middleware/trace";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 
@@ -12,7 +15,7 @@ const staticRoot = process.env["STATIC_ROOT"] ?? "/app/web-dist";
 const serveWeb = process.env["SERVE_WEB"] === "true";
 const apiV1 = "/api/v1";
 
-const app = new Hono()
+const app = new Hono<{ Bindings: HonoBindings; Variables: HonoVariables }>()
   .use("*", logger())
   .use("*", cors({ origin: process.env["WEB_URL"] ?? "http://localhost:5173" }))
   .use("*", traceMiddleware)
@@ -20,8 +23,17 @@ const app = new Hono()
   .route(`${apiV1}/sse`, sseRoute)
   .route(`${apiV1}/ws`, wsRoute)
   .route(`${apiV1}/users`, usersRoute)
+  .route(`${apiV1}/artifacts`, artifactsRoute)
   .onError(errorHandler)
   .notFound(notFoundHandler);
+
+const mastraServer = new MastraServer({
+  app,
+  mastra,
+  prefix: apiV1,
+});
+
+await mastraServer.init();
 
 if (serveWeb) {
   app.get("/assets/*", async (c) => {
