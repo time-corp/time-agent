@@ -1,0 +1,21 @@
+{
+  "shell": {
+    "appName": "Time Agent",
+    "workspace": "Không gian làm việc"
+  },
+  "sidebar": {
+    "workspace": "Điều hướng"
+  },
+  "common": {
+    "home": "Trang chủ",
+    "users": "Người dùng",
+    "realtime": "Realtime",
+    "welcomeTitle": "Khung web ưu tiên TanStack",
+    "welcomeBody": "Gói web giờ đã có dashboard shell với TanStack Router, shadcn/ui, chuyển theme và chuyển ngôn ngữ.",
+    "welcomeHintOne": "Dùng sidebar để chuyển giữa các route.",
+    "welcomeHintTwo": "Trang người dùng vẫn giữ ví dụ CRUD bằng React Query.",
+    "welcomeHintThree": "Trang realtime vẫn giữ demo SSE và WebSocket.",
+    "realtimeTitle": "Demo realtime",
+    "realtimeBody": "SSE và WebSocket đang được giữ riêng ở đây trong khi phần shell tiếp tục migrate."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "shell": {
+    "appName": "Time Agent",
+    "workspace": "Workspace"
+  },
+  "sidebar": {
+    "workspace": "Workspace"
+  },
+  "common": {
+    "home": "Home",
+    "users": "Users",
+    "realtime": "Realtime",
+    "welcomeTitle": "TanStack-first web shell",
+    "welcomeBody": "This web package now has a dashboard shell with TanStack Router, shadcn/ui, theme switching, and language switching.",
+    "welcomeHintOne": "Use the sidebar to move between routes.",
+    "welcomeHintTwo": "The users page keeps the React Query CRUD example.",
+    "welcomeHintThree": "The realtime page keeps the SSE and WebSocket demos.",
+    "realtimeTitle": "Realtime demos",
+    "realtimeBody": "SSE and WebSocket remain isolated here while the shell migration moves forward."
+  }
+}
