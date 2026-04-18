@@ -4,7 +4,7 @@
   "module": "src/index.ts",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun build --compile src/index.ts --outfile dist/api",
+    "build": "bun build --compile src/index.ts --outfile dist/api --external cpu-features",
     "db:ensure": "bun run src/db/ensure.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
     "@hono/zod-validator": "^0.7.6",
+    "@mastra/agent-browser": "^0.2.0",
     "@mastra/core": "^1.25.0",
     "@mastra/hono": "^1.4.4",
     "@time/shared": "workspace:*",

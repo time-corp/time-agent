@@ -35,3 +35,4 @@ packages/api/.artifacts/
 
 # User-uploaded skills
 packages/api/.skills/
+bun.lock

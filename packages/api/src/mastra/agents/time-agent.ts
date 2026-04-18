@@ -1,26 +1,33 @@
 import { Agent } from "@mastra/core/agent";
 import { getUserTool } from "../tools/get-user-tool";
 import { listUsersTool } from "../tools/list-users-tool";
-import { runSkillTool } from "../tools/run-skill-tool";
-import { timeAgentWorkspace } from "../workspace";
+import { copyArtifactTool } from "../tools/copy-artifact-tool";
+import { agentBrowser } from "../browser";
 
 export const timeAgent = new Agent({
   id: "time-agent",
   name: "Time Agent",
-  description: "Answers questions about users using the API's existing services.",
+  description:
+    "A general-purpose assistant that can query users and browse the web.",
   instructions: `
 You are the backend assistant for the Time Agent application.
 
 Use the available tools whenever the user asks about users, user records, or profile data.
 Only rely on tool results for factual user data.
-When the user asks to open a website or capture a screenshot, use the run-skill tool with a registered browser skill.
+
+For browsing, reading, or screenshotting a website:
+- Use browser_goto to navigate to the URL
+- Use browser_snapshot to read page content (accessibility tree)
+- Use browser_screenshot to capture a screenshot
+- Chain browser tools as needed (e.g. goto → snapshot → click → snapshot)
+
 If a request is outside the available tools, say so briefly and avoid inventing data.
 `,
   model: "openai/gpt-4o-mini",
-  workspace: timeAgentWorkspace,
   tools: {
     listUsers: listUsersTool,
     getUser: getUserTool,
-    runSkill: runSkillTool,
+    copyArtifact: copyArtifactTool,
+    ...agentBrowser.getTools(),
   },
 });

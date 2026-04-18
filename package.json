@@ -8,5 +8,8 @@
     "dev": "pnpm -r --parallel --filter @time/api --filter @time/web dev",
     "build": "pnpm --filter @time/web build && pnpm --filter @time/api build",
     "test": "pnpm -r --if-present test"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
