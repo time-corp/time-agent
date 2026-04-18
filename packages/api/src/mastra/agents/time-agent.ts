@@ -2,6 +2,7 @@ import { Agent } from "@mastra/core/agent";
 import { getUserTool } from "../tools/get-user-tool";
 import { listUsersTool } from "../tools/list-users-tool";
 import { copyArtifactTool } from "../tools/copy-artifact-tool";
+import { screenshotTool } from "../tools/screenshot-tool";
 import { agentBrowser } from "../browser";
 
 export const timeAgent = new Agent({
@@ -28,6 +29,7 @@ If a request is outside the available tools, say so briefly and avoid inventing 
     listUsers: listUsersTool,
     getUser: getUserTool,
     copyArtifact: copyArtifactTool,
+    takeScreenshot: screenshotTool,
     ...agentBrowser.getTools(),
   },
 });

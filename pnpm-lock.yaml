@@ -37,6 +37,9 @@ importers:
       hono:
         specifier: ^4.12.14
         version: 4.12.14
+      playwright-core:
+        specifier: ^1.59.1
+        version: 1.59.1
       tar-stream:
         specifier: ^3.1.8
         version: 3.1.8

@@ -1,8 +1,10 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
-import { copyArtifactFromSandbox } from "../../services/sandbox-artifact-service";
-import { executeShellInSandbox } from "../../services/sandbox-exec-service";
+import { mkdir, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { agentBrowser } from "../browser";
+import { ARTIFACT_STORAGE_DIR } from "../../services/sandbox-artifact-service";
 
 const ARTIFACT_BASE_URL =
   process.env["ARTIFACT_BASE_URL"] ?? "http://localhost:3000";
@@ -10,7 +12,7 @@ const ARTIFACT_BASE_URL =
 export const screenshotTool = createTool({
   id: "take_screenshot",
   description:
-    "Open a URL in a headless browser inside the sandbox and take a screenshot. Returns a public URL to the image.",
+    "Navigate to a URL and take a screenshot. Returns a public URL to the image.",
   inputSchema: z.object({
     url: z.string().describe("The full URL to navigate to and screenshot"),
     fullPage: z.boolean().optional().describe("Capture full scrollable page"),
@@ -20,19 +22,33 @@ export const screenshotTool = createTool({
   }),
   execute: async ({ url, fullPage }) => {
     const runId = randomUUID();
-    const sandboxPath = `/tmp/screenshot-${runId}.png`;
+    const fileName = `screenshot-${runId}.png`;
 
-    console.log("[screenshot] running inside sandbox, url:", url);
-
-    await executeShellInSandbox(
-      `/usr/local/bin/take-screenshot.sh ${JSON.stringify(url)} ${sandboxPath} ${fullPage ?? false}`
+    console.log(
+      "[screenshot] executablePath:",
+      process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"] ?? "(default)",
     );
+    console.log("[screenshot] artifactDir:", ARTIFACT_STORAGE_DIR);
+    console.log("[screenshot] url:", url);
 
-    console.log("[screenshot] saved in sandbox:", sandboxPath);
+    try {
+      await agentBrowser.ensureReady();
+      const manager = await agentBrowser.getManagerForThread();
+      const page = manager.getPage();
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      const buffer = await page.screenshot({ fullPage: fullPage ?? false });
 
-    const stored = await copyArtifactFromSandbox(runId, sandboxPath);
-    const artifactUrl = `${ARTIFACT_BASE_URL}/api/v1/artifacts/${runId}/${stored.fileName}`;
-    console.log("[screenshot] artifact url:", artifactUrl);
-    return { url: artifactUrl };
+      const storageDir = resolve(ARTIFACT_STORAGE_DIR, runId);
+      await mkdir(storageDir, { recursive: true });
+      await writeFile(resolve(storageDir, fileName), buffer);
+
+      console.log("[screenshot] saved:", resolve(storageDir, fileName));
+      return {
+        url: `${ARTIFACT_BASE_URL}/api/v1/artifacts/${runId}/${fileName}`,
+      };
+    } catch (err) {
+      console.error("[screenshot] error:", err);
+      throw err;
+    }
   },
 });

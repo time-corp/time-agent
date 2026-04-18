@@ -22,20 +22,16 @@ COPY packages ./packages
 
 RUN pnpm --filter @time/web build
 
-# Install Playwright browser binaries into a known path
-ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
-RUN npx --yes playwright install --with-deps chromium
+# Playwright image has Chromium + all system deps pre-installed
+FROM mcr.microsoft.com/playwright:v1.59.1-jammy AS runner
 
-FROM oven/bun:1-debian AS runner
+# Add bun runtime
+COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-# Chromium system dependencies required by Playwright
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates tzdata \
-        libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-        libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
-        libxrandr2 libgbm1 libasound2 libpango-1.0-0 libcairo2 \
-    && rm -rf /var/lib/apt/lists/*
+# Wrapper to inject --no-sandbox (required for non-root in Docker)
+RUN CHROMIUM=$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | head -1) && \
+    printf '#!/bin/sh\nexec "%s" --no-sandbox --disable-dev-shm-usage "$@"\n' "$CHROMIUM" \
+    > /usr/local/bin/chromium-wrapper && chmod +x /usr/local/bin/chromium-wrapper
 
 WORKDIR /app
 
@@ -45,11 +41,13 @@ ENV DB_DRIVER=sqlite
 ENV DATABASE_URL=/data/local.db
 ENV STATIC_ROOT=/app/web-dist
 ENV SERVE_WEB=true
-ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/local/bin/chromium-wrapper
 
 RUN useradd -r -u 1001 -d /app -s /usr/sbin/nologin appuser \
-    && mkdir -p /data \
-    && chown appuser:appuser /data
+    && mkdir -p /data /app/.artifacts \
+    && chown appuser:appuser /data /app/.artifacts
 
 COPY --from=builder --chown=appuser:appuser /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appuser /app/packages/api/node_modules ./packages/api/node_modules
@@ -60,7 +58,6 @@ COPY --from=builder --chown=appuser:appuser /app/packages/shared ./packages/shar
 COPY --from=builder --chown=appuser:appuser /app/package.json ./package.json
 COPY --from=builder --chown=appuser:appuser /app/tsconfig.base.json ./tsconfig.base.json
 COPY --from=builder --chown=appuser:appuser /app/packages/web/dist ./web-dist
-COPY --from=builder --chown=appuser:appuser /app/pw-browsers /app/pw-browsers
 
 USER appuser
 
