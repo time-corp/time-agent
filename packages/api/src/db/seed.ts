@@ -7,6 +7,9 @@ const seeds = [
     email: "admin@example.com",
     password: await Bun.password.hash("admin1234"),
     fullname: "Admin User",
+    tenantId: "system",
+    createdBy: "system",
+    updatedBy: "system",
   },
   {
     id: crypto.randomUUID(),
@@ -14,6 +17,9 @@ const seeds = [
     email: "alice@example.com",
     password: await Bun.password.hash("alice1234"),
     fullname: "Alice Smith",
+    tenantId: "system",
+    createdBy: "system",
+    updatedBy: "system",
   },
 ];
 

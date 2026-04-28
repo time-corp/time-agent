@@ -1,28 +1,32 @@
 import { z } from "zod";
+import {
+  EMAIL_MAX_LENGTH,
+  FULLNAME_MAX_LENGTH,
+  ID_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+} from "../constants/field-lengths";
+import { baseEntitySchema } from "./base";
 
-const userDateSchema = z.union([z.string(), z.number(), z.date()]);
-
-export const userSchema = z.object({
-  id: z.string().min(1),
-  username: z.string().min(3).max(50),
-  email: z.string().email(),
-  fullname: z.string().min(1).max(100),
-  createdAt: userDateSchema,
-  updatedAt: userDateSchema,
+export const userSchema = baseEntitySchema.extend({
+  id: z.string().min(1).max(ID_MAX_LENGTH),
+  username: z.string().min(3).max(USERNAME_MAX_LENGTH),
+  email: z.string().email().max(EMAIL_MAX_LENGTH),
+  fullname: z.string().min(1).max(FULLNAME_MAX_LENGTH),
 });
 
 export const createUserSchema = z.object({
-  username: z.string().min(3).max(50),
-  email: z.string().email(),
-  password: z.string().min(8),
-  fullname: z.string().min(1).max(100),
+  username: z.string().min(3).max(USERNAME_MAX_LENGTH),
+  email: z.string().email().max(EMAIL_MAX_LENGTH),
+  password: z.string().min(8).max(PASSWORD_MAX_LENGTH),
+  fullname: z.string().min(1).max(FULLNAME_MAX_LENGTH),
 });
 
 export const updateUserSchema = z.object({
-  username: z.string().min(3).max(50).optional(),
-  email: z.string().email().optional(),
-  password: z.string().min(8).optional(),
-  fullname: z.string().min(1).max(100).optional(),
+  username: z.string().min(3).max(USERNAME_MAX_LENGTH).optional(),
+  email: z.string().email().max(EMAIL_MAX_LENGTH).optional(),
+  password: z.string().min(8).max(PASSWORD_MAX_LENGTH).optional(),
+  fullname: z.string().min(1).max(FULLNAME_MAX_LENGTH).optional(),
 });
 
 export type User = z.infer<typeof userSchema>;

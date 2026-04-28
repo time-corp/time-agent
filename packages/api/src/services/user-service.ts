@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 import { AppError, ErrorCode } from "../lib/errors";
 
+const DEFAULT_TENANT_ID = "system";
+const DEFAULT_ACTOR_ID = "system";
+
 const toSafeUser = (user: typeof schema.users.$inferSelect) => {
   const { password: _password, ...safeUser } = user;
   return safeUser;
@@ -33,7 +36,14 @@ export const createUser = async (input: CreateUserInput) => {
 
   const [user] = await db
     .insert(schema.users)
-    .values({ ...input, id, password: hashedPassword })
+    .values({
+      ...input,
+      id,
+      password: hashedPassword,
+      tenantId: DEFAULT_TENANT_ID,
+      createdBy: DEFAULT_ACTOR_ID,
+      updatedBy: DEFAULT_ACTOR_ID,
+    })
     .returning();
 
   if (!user) {
@@ -44,7 +54,11 @@ export const createUser = async (input: CreateUserInput) => {
 };
 
 export const updateUserById = async (id: string, input: UpdateUserInput) => {
-  const updates: Record<string, unknown> = { ...input, updatedAt: new Date() };
+  const updates: Record<string, unknown> = {
+    ...input,
+    updatedAt: new Date(),
+    updatedBy: DEFAULT_ACTOR_ID,
+  };
 
   if (input.password) {
     updates["password"] = await Bun.password.hash(input.password);

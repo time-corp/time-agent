@@ -13,6 +13,9 @@ This monorepo has 3 main packages:
 - Shared contracts are the source of truth for API/Web contracts
 - DB schema is not the same thing as the public response model
 - Map public-safe models before returning responses
+- Default toward multi-tenant design for domain entities
+- Every tenant-owned entity should carry `tenantId`, `createdAt`, `createdBy`, `updatedAt`, and `updatedBy`
+- Every string field must define an explicit `max length` in both shared schemas and DB schemas
 - Keep backend and frontend details in skills instead of expanding this file
 
 ## Working Style
@@ -28,6 +31,10 @@ This monorepo has 3 main packages:
 
 - Backend details: [backend skill](/Users/time/time-agent/.codex/skills/backend/SKILL.md)
 - Frontend details: [frontend skill](/Users/time/time-agent/.codex/skills/frontend/SKILL.md)
+
+## Conventions
+
+- API schema conventions: [docs/api/schema-conventions.md](/Users/time/time-agent/docs/api/schema-conventions.md)
 
 ## Reference
 
