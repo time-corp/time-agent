@@ -4,7 +4,7 @@
   "module": "src/index.ts",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun build --compile src/index.ts --outfile dist/api --external cpu-features",
+    "build": "bun build --compile src/index.ts --outfile dist/api --external cpu-features --external electron --external chromium-bidi",
     "db:ensure": "bun run src/db/ensure.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",

@@ -16,6 +16,13 @@
     "welcomeHintTwo": "Trang người dùng vẫn giữ ví dụ CRUD bằng React Query.",
     "welcomeHintThree": "Trang realtime vẫn giữ demo SSE và WebSocket.",
     "realtimeTitle": "Demo realtime",
-    "realtimeBody": "SSE và WebSocket đang được giữ riêng ở đây trong khi phần shell tiếp tục migrate."
+    "realtimeBody": "SSE và WebSocket đang được giữ riêng ở đây trong khi phần shell tiếp tục migrate.",
+    "chat": "Chat",
+    "chatMode": "Chế độ",
+    "chatGenerate": "Generate",
+    "chatStream": "Stream",
+    "chatEmpty": "Gửi tin nhắn để bắt đầu trò chuyện.",
+    "chatPlaceholder": "Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)",
+    "chatHint": "Enter để gửi · Shift+Enter xuống dòng"
   }
 }

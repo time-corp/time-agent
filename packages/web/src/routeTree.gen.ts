@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as RealtimeRouteImport } from './routes/realtime'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users/index'
 import { Route as UsersCreateRouteImport } from './routes/users/create'
@@ -24,6 +25,11 @@ const UsersRoute = UsersRouteImport.update({
 const RealtimeRoute = RealtimeRouteImport.update({
   id: '/realtime',
   path: '/realtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,6 +55,7 @@ const UsersUserIdEditRoute = UsersUserIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/realtime': typeof RealtimeRoute
   '/users': typeof UsersRouteWithChildren
   '/users/create': typeof UsersCreateRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/realtime': typeof RealtimeRoute
   '/users/create': typeof UsersCreateRoute
   '/users': typeof UsersIndexRoute
@@ -65,6 +73,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/realtime': typeof RealtimeRoute
   '/users': typeof UsersRouteWithChildren
   '/users/create': typeof UsersCreateRoute
@@ -75,16 +84,24 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chat'
     | '/realtime'
     | '/users'
     | '/users/create'
     | '/users/'
     | '/users/$userId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/realtime' | '/users/create' | '/users' | '/users/$userId/edit'
+  to:
+    | '/'
+    | '/chat'
+    | '/realtime'
+    | '/users/create'
+    | '/users'
+    | '/users/$userId/edit'
   id:
     | '__root__'
     | '/'
+    | '/chat'
     | '/realtime'
     | '/users'
     | '/users/create'
@@ -94,6 +111,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChatRoute: typeof ChatRoute
   RealtimeRoute: typeof RealtimeRoute
   UsersRoute: typeof UsersRouteWithChildren
 }
@@ -112,6 +130,13 @@ declare module '@tanstack/react-router' {
       path: '/realtime'
       fullPath: '/realtime'
       preLoaderRoute: typeof RealtimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -161,6 +186,7 @@ const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChatRoute: ChatRoute,
   RealtimeRoute: RealtimeRoute,
   UsersRoute: UsersRouteWithChildren,
 }

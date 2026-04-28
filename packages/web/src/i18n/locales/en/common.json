@@ -16,6 +16,13 @@
     "welcomeHintTwo": "The users page keeps the React Query CRUD example.",
     "welcomeHintThree": "The realtime page keeps the SSE and WebSocket demos.",
     "realtimeTitle": "Realtime demos",
-    "realtimeBody": "SSE and WebSocket remain isolated here while the shell migration moves forward."
+    "realtimeBody": "SSE and WebSocket remain isolated here while the shell migration moves forward.",
+    "chat": "Chat",
+    "chatMode": "Mode",
+    "chatGenerate": "Generate",
+    "chatStream": "Stream",
+    "chatEmpty": "Send a message to start chatting.",
+    "chatPlaceholder": "Type a message... (Enter to send, Shift+Enter for new line)",
+    "chatHint": "Enter to send · Shift+Enter for new line"
   }
 }

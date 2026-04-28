@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { ActivityIcon, HouseIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, HouseIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
 
 export type SidebarItem = {
   titleKey: string;
@@ -17,6 +17,7 @@ export const appSidebarSections: SidebarSection[] = [
     labelKey: "sidebar.workspace",
     items: [
       { titleKey: "common.home", url: "/", icon: HouseIcon },
+      { titleKey: "common.chat", url: "/chat", icon: MessageSquareIcon },
       { titleKey: "common.users", url: "/users", icon: UsersIcon },
       { titleKey: "common.realtime", url: "/realtime", icon: ActivityIcon },
     ],
