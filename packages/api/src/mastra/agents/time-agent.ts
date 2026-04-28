@@ -1,9 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { getUserTool } from "../tools/get-user-tool";
-import { listUsersTool } from "../tools/list-users-tool";
-import { copyArtifactTool } from "../tools/copy-artifact-tool";
-import { screenshotTool } from "../tools/screenshot-tool";
-import { agentBrowser } from "../browser";
+import { defaultAgentTools } from "../tools";
 
 export const timeAgent = new Agent({
   id: "time-agent",
@@ -25,11 +21,5 @@ For browsing, reading, or screenshotting a website:
 If a request is outside the available tools, say so briefly and avoid inventing data.
 `,
   model: "openai/gpt-4o-mini",
-  tools: {
-    listUsers: listUsersTool,
-    getUser: getUserTool,
-    copyArtifact: copyArtifactTool,
-    takeScreenshot: screenshotTool,
-    ...agentBrowser.getTools(),
-  },
+  tools: defaultAgentTools,
 });

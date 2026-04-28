@@ -1,7 +1,16 @@
 export const ID_MAX_LENGTH = 128;
 export const TENANT_ID_MAX_LENGTH = 128;
 export const ACTOR_ID_MAX_LENGTH = 128;
+export const NAME_MAX_LENGTH = 100;
 export const USERNAME_MAX_LENGTH = 50;
 export const EMAIL_MAX_LENGTH = 255;
 export const PASSWORD_MAX_LENGTH = 255;
 export const FULLNAME_MAX_LENGTH = 100;
+export const PROVIDER_TYPE_MAX_LENGTH = 32;
+export const BASE_URL_MAX_LENGTH = 2048;
+export const SECRET_MAX_LENGTH = 4096;
+export const MODEL_NAME_MAX_LENGTH = 200;
+export const AGENT_NAME_MAX_LENGTH = 120;
+export const AGENT_DESCRIPTION_MAX_LENGTH = 500;
+export const SYSTEM_PROMPT_MAX_LENGTH = 20000;
+export const CONFIG_JSON_MAX_LENGTH = 20000;

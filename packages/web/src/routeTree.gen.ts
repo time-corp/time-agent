@@ -11,11 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as RealtimeRouteImport } from './routes/realtime'
+import { Route as ProvidersRouteImport } from './routes/providers'
+import { Route as ModelsRouteImport } from './routes/models'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AgentConfigsRouteImport } from './routes/agent-configs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users/index'
+import { Route as ProvidersIndexRouteImport } from './routes/providers/index'
+import { Route as ModelsIndexRouteImport } from './routes/models/index'
+import { Route as AgentConfigsIndexRouteImport } from './routes/agent-configs/index'
 import { Route as UsersCreateRouteImport } from './routes/users/create'
+import { Route as ProvidersCreateRouteImport } from './routes/providers/create'
+import { Route as ModelsCreateRouteImport } from './routes/models/create'
+import { Route as AgentConfigsCreateRouteImport } from './routes/agent-configs/create'
 import { Route as UsersUserIdEditRouteImport } from './routes/users/$userId/edit'
+import { Route as ProvidersProviderIdEditRouteImport } from './routes/providers/$providerId/edit'
+import { Route as ModelsModelIdEditRouteImport } from './routes/models/$modelId/edit'
+import { Route as AgentConfigsAgentConfigIdEditRouteImport } from './routes/agent-configs/$agentConfigId/edit'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -27,9 +39,24 @@ const RealtimeRoute = RealtimeRouteImport.update({
   path: '/realtime',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProvidersRoute = ProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelsRoute = ModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentConfigsRoute = AgentConfigsRouteImport.update({
+  id: '/agent-configs',
+  path: '/agent-configs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -42,76 +69,191 @@ const UsersIndexRoute = UsersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => UsersRoute,
 } as any)
+const ProvidersIndexRoute = ProvidersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProvidersRoute,
+} as any)
+const ModelsIndexRoute = ModelsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ModelsRoute,
+} as any)
+const AgentConfigsIndexRoute = AgentConfigsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentConfigsRoute,
+} as any)
 const UsersCreateRoute = UsersCreateRouteImport.update({
   id: '/create',
   path: '/create',
   getParentRoute: () => UsersRoute,
+} as any)
+const ProvidersCreateRoute = ProvidersCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => ProvidersRoute,
+} as any)
+const ModelsCreateRoute = ModelsCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => ModelsRoute,
+} as any)
+const AgentConfigsCreateRoute = AgentConfigsCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AgentConfigsRoute,
 } as any)
 const UsersUserIdEditRoute = UsersUserIdEditRouteImport.update({
   id: '/$userId/edit',
   path: '/$userId/edit',
   getParentRoute: () => UsersRoute,
 } as any)
+const ProvidersProviderIdEditRoute = ProvidersProviderIdEditRouteImport.update({
+  id: '/$providerId/edit',
+  path: '/$providerId/edit',
+  getParentRoute: () => ProvidersRoute,
+} as any)
+const ModelsModelIdEditRoute = ModelsModelIdEditRouteImport.update({
+  id: '/$modelId/edit',
+  path: '/$modelId/edit',
+  getParentRoute: () => ModelsRoute,
+} as any)
+const AgentConfigsAgentConfigIdEditRoute =
+  AgentConfigsAgentConfigIdEditRouteImport.update({
+    id: '/$agentConfigId/edit',
+    path: '/$agentConfigId/edit',
+    getParentRoute: () => AgentConfigsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agent-configs': typeof AgentConfigsRouteWithChildren
   '/chat': typeof ChatRoute
+  '/models': typeof ModelsRouteWithChildren
+  '/providers': typeof ProvidersRouteWithChildren
   '/realtime': typeof RealtimeRoute
   '/users': typeof UsersRouteWithChildren
+  '/agent-configs/create': typeof AgentConfigsCreateRoute
+  '/models/create': typeof ModelsCreateRoute
+  '/providers/create': typeof ProvidersCreateRoute
   '/users/create': typeof UsersCreateRoute
+  '/agent-configs/': typeof AgentConfigsIndexRoute
+  '/models/': typeof ModelsIndexRoute
+  '/providers/': typeof ProvidersIndexRoute
   '/users/': typeof UsersIndexRoute
+  '/agent-configs/$agentConfigId/edit': typeof AgentConfigsAgentConfigIdEditRoute
+  '/models/$modelId/edit': typeof ModelsModelIdEditRoute
+  '/providers/$providerId/edit': typeof ProvidersProviderIdEditRoute
   '/users/$userId/edit': typeof UsersUserIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/realtime': typeof RealtimeRoute
+  '/agent-configs/create': typeof AgentConfigsCreateRoute
+  '/models/create': typeof ModelsCreateRoute
+  '/providers/create': typeof ProvidersCreateRoute
   '/users/create': typeof UsersCreateRoute
+  '/agent-configs': typeof AgentConfigsIndexRoute
+  '/models': typeof ModelsIndexRoute
+  '/providers': typeof ProvidersIndexRoute
   '/users': typeof UsersIndexRoute
+  '/agent-configs/$agentConfigId/edit': typeof AgentConfigsAgentConfigIdEditRoute
+  '/models/$modelId/edit': typeof ModelsModelIdEditRoute
+  '/providers/$providerId/edit': typeof ProvidersProviderIdEditRoute
   '/users/$userId/edit': typeof UsersUserIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agent-configs': typeof AgentConfigsRouteWithChildren
   '/chat': typeof ChatRoute
+  '/models': typeof ModelsRouteWithChildren
+  '/providers': typeof ProvidersRouteWithChildren
   '/realtime': typeof RealtimeRoute
   '/users': typeof UsersRouteWithChildren
+  '/agent-configs/create': typeof AgentConfigsCreateRoute
+  '/models/create': typeof ModelsCreateRoute
+  '/providers/create': typeof ProvidersCreateRoute
   '/users/create': typeof UsersCreateRoute
+  '/agent-configs/': typeof AgentConfigsIndexRoute
+  '/models/': typeof ModelsIndexRoute
+  '/providers/': typeof ProvidersIndexRoute
   '/users/': typeof UsersIndexRoute
+  '/agent-configs/$agentConfigId/edit': typeof AgentConfigsAgentConfigIdEditRoute
+  '/models/$modelId/edit': typeof ModelsModelIdEditRoute
+  '/providers/$providerId/edit': typeof ProvidersProviderIdEditRoute
   '/users/$userId/edit': typeof UsersUserIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agent-configs'
     | '/chat'
+    | '/models'
+    | '/providers'
     | '/realtime'
     | '/users'
+    | '/agent-configs/create'
+    | '/models/create'
+    | '/providers/create'
     | '/users/create'
+    | '/agent-configs/'
+    | '/models/'
+    | '/providers/'
     | '/users/'
+    | '/agent-configs/$agentConfigId/edit'
+    | '/models/$modelId/edit'
+    | '/providers/$providerId/edit'
     | '/users/$userId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/chat'
     | '/realtime'
+    | '/agent-configs/create'
+    | '/models/create'
+    | '/providers/create'
     | '/users/create'
+    | '/agent-configs'
+    | '/models'
+    | '/providers'
     | '/users'
+    | '/agent-configs/$agentConfigId/edit'
+    | '/models/$modelId/edit'
+    | '/providers/$providerId/edit'
     | '/users/$userId/edit'
   id:
     | '__root__'
     | '/'
+    | '/agent-configs'
     | '/chat'
+    | '/models'
+    | '/providers'
     | '/realtime'
     | '/users'
+    | '/agent-configs/create'
+    | '/models/create'
+    | '/providers/create'
     | '/users/create'
+    | '/agent-configs/'
+    | '/models/'
+    | '/providers/'
     | '/users/'
+    | '/agent-configs/$agentConfigId/edit'
+    | '/models/$modelId/edit'
+    | '/providers/$providerId/edit'
     | '/users/$userId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgentConfigsRoute: typeof AgentConfigsRouteWithChildren
   ChatRoute: typeof ChatRoute
+  ModelsRoute: typeof ModelsRouteWithChildren
+  ProvidersRoute: typeof ProvidersRouteWithChildren
   RealtimeRoute: typeof RealtimeRoute
   UsersRoute: typeof UsersRouteWithChildren
 }
@@ -132,11 +274,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RealtimeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/providers': {
+      id: '/providers'
+      path: '/providers'
+      fullPath: '/providers'
+      preLoaderRoute: typeof ProvidersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/models': {
+      id: '/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent-configs': {
+      id: '/agent-configs'
+      path: '/agent-configs'
+      fullPath: '/agent-configs'
+      preLoaderRoute: typeof AgentConfigsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -153,12 +316,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersIndexRouteImport
       parentRoute: typeof UsersRoute
     }
+    '/providers/': {
+      id: '/providers/'
+      path: '/'
+      fullPath: '/providers/'
+      preLoaderRoute: typeof ProvidersIndexRouteImport
+      parentRoute: typeof ProvidersRoute
+    }
+    '/models/': {
+      id: '/models/'
+      path: '/'
+      fullPath: '/models/'
+      preLoaderRoute: typeof ModelsIndexRouteImport
+      parentRoute: typeof ModelsRoute
+    }
+    '/agent-configs/': {
+      id: '/agent-configs/'
+      path: '/'
+      fullPath: '/agent-configs/'
+      preLoaderRoute: typeof AgentConfigsIndexRouteImport
+      parentRoute: typeof AgentConfigsRoute
+    }
     '/users/create': {
       id: '/users/create'
       path: '/create'
       fullPath: '/users/create'
       preLoaderRoute: typeof UsersCreateRouteImport
       parentRoute: typeof UsersRoute
+    }
+    '/providers/create': {
+      id: '/providers/create'
+      path: '/create'
+      fullPath: '/providers/create'
+      preLoaderRoute: typeof ProvidersCreateRouteImport
+      parentRoute: typeof ProvidersRoute
+    }
+    '/models/create': {
+      id: '/models/create'
+      path: '/create'
+      fullPath: '/models/create'
+      preLoaderRoute: typeof ModelsCreateRouteImport
+      parentRoute: typeof ModelsRoute
+    }
+    '/agent-configs/create': {
+      id: '/agent-configs/create'
+      path: '/create'
+      fullPath: '/agent-configs/create'
+      preLoaderRoute: typeof AgentConfigsCreateRouteImport
+      parentRoute: typeof AgentConfigsRoute
     }
     '/users/$userId/edit': {
       id: '/users/$userId/edit'
@@ -167,8 +372,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersUserIdEditRouteImport
       parentRoute: typeof UsersRoute
     }
+    '/providers/$providerId/edit': {
+      id: '/providers/$providerId/edit'
+      path: '/$providerId/edit'
+      fullPath: '/providers/$providerId/edit'
+      preLoaderRoute: typeof ProvidersProviderIdEditRouteImport
+      parentRoute: typeof ProvidersRoute
+    }
+    '/models/$modelId/edit': {
+      id: '/models/$modelId/edit'
+      path: '/$modelId/edit'
+      fullPath: '/models/$modelId/edit'
+      preLoaderRoute: typeof ModelsModelIdEditRouteImport
+      parentRoute: typeof ModelsRoute
+    }
+    '/agent-configs/$agentConfigId/edit': {
+      id: '/agent-configs/$agentConfigId/edit'
+      path: '/$agentConfigId/edit'
+      fullPath: '/agent-configs/$agentConfigId/edit'
+      preLoaderRoute: typeof AgentConfigsAgentConfigIdEditRouteImport
+      parentRoute: typeof AgentConfigsRoute
+    }
   }
 }
+
+interface AgentConfigsRouteChildren {
+  AgentConfigsCreateRoute: typeof AgentConfigsCreateRoute
+  AgentConfigsIndexRoute: typeof AgentConfigsIndexRoute
+  AgentConfigsAgentConfigIdEditRoute: typeof AgentConfigsAgentConfigIdEditRoute
+}
+
+const AgentConfigsRouteChildren: AgentConfigsRouteChildren = {
+  AgentConfigsCreateRoute: AgentConfigsCreateRoute,
+  AgentConfigsIndexRoute: AgentConfigsIndexRoute,
+  AgentConfigsAgentConfigIdEditRoute: AgentConfigsAgentConfigIdEditRoute,
+}
+
+const AgentConfigsRouteWithChildren = AgentConfigsRoute._addFileChildren(
+  AgentConfigsRouteChildren,
+)
+
+interface ModelsRouteChildren {
+  ModelsCreateRoute: typeof ModelsCreateRoute
+  ModelsIndexRoute: typeof ModelsIndexRoute
+  ModelsModelIdEditRoute: typeof ModelsModelIdEditRoute
+}
+
+const ModelsRouteChildren: ModelsRouteChildren = {
+  ModelsCreateRoute: ModelsCreateRoute,
+  ModelsIndexRoute: ModelsIndexRoute,
+  ModelsModelIdEditRoute: ModelsModelIdEditRoute,
+}
+
+const ModelsRouteWithChildren =
+  ModelsRoute._addFileChildren(ModelsRouteChildren)
+
+interface ProvidersRouteChildren {
+  ProvidersCreateRoute: typeof ProvidersCreateRoute
+  ProvidersIndexRoute: typeof ProvidersIndexRoute
+  ProvidersProviderIdEditRoute: typeof ProvidersProviderIdEditRoute
+}
+
+const ProvidersRouteChildren: ProvidersRouteChildren = {
+  ProvidersCreateRoute: ProvidersCreateRoute,
+  ProvidersIndexRoute: ProvidersIndexRoute,
+  ProvidersProviderIdEditRoute: ProvidersProviderIdEditRoute,
+}
+
+const ProvidersRouteWithChildren = ProvidersRoute._addFileChildren(
+  ProvidersRouteChildren,
+)
 
 interface UsersRouteChildren {
   UsersCreateRoute: typeof UsersCreateRoute
@@ -186,7 +459,10 @@ const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgentConfigsRoute: AgentConfigsRouteWithChildren,
   ChatRoute: ChatRoute,
+  ModelsRoute: ModelsRouteWithChildren,
+  ProvidersRoute: ProvidersRouteWithChildren,
   RealtimeRoute: RealtimeRoute,
   UsersRoute: UsersRouteWithChildren,
 }

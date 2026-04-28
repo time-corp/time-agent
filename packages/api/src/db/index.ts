@@ -2,8 +2,8 @@ import { drizzle as drizzlePg } from "drizzle-orm/bun-sql";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import { drizzle as drizzleSqlite } from "drizzle-orm/bun-sqlite";
 import { Database } from "bun:sqlite";
-import * as pgSchema from "./schema/users.pg";
-import * as sqliteSchema from "./schema/users.sqlite";
+import * as pgSchema from "./schema/pg";
+import * as sqliteSchema from "./schema/sqlite";
 
 const isPg = process.env["DB_DRIVER"] === "pg";
 const DB_URL = process.env["DATABASE_URL"];
@@ -15,6 +15,7 @@ export const schema = (
 
 const createSqliteDatabase = () => {
   const sqlite = new Database(DB_URL ?? "local.db");
+  sqlite.exec("PRAGMA foreign_keys = ON;");
 
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -23,6 +24,56 @@ const createSqliteDatabase = () => {
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       fullname VARCHAR(100) NOT NULL,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS providers (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      type VARCHAR(32) NOT NULL,
+      api_key VARCHAR(4096),
+      base_url VARCHAR(2048),
+      is_active INTEGER NOT NULL DEFAULT 1,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS models (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      provider_id VARCHAR(128) NOT NULL REFERENCES providers(id),
+      model_name VARCHAR(200) NOT NULL,
+      temperature INTEGER NOT NULL DEFAULT 70,
+      max_tokens INTEGER NOT NULL DEFAULT 4096,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS agents (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      name VARCHAR(120) NOT NULL,
+      description VARCHAR(500),
+      model_id VARCHAR(128) NOT NULL REFERENCES models(id),
+      system_prompt VARCHAR(20000) NOT NULL,
+      tools_config VARCHAR(20000) NOT NULL,
+      memory_config VARCHAR(20000) NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
       tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
       created_by VARCHAR(128) NOT NULL DEFAULT 'system',
       updated_by VARCHAR(128) NOT NULL DEFAULT 'system',

@@ -9,6 +9,9 @@
   "common": {
     "home": "Home",
     "users": "Users",
+    "providers": "Providers",
+    "models": "Models",
+    "agentConfigs": "Agent Configs",
     "realtime": "Realtime",
     "welcomeTitle": "TanStack-first web shell",
     "welcomeBody": "This web package now has a dashboard shell with TanStack Router, shadcn/ui, theme switching, and language switching.",

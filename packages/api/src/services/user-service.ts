@@ -1,10 +1,8 @@
 import type { CreateUserInput, UpdateUserInput } from "@time/shared";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
+import { DEFAULT_ACTOR_ID, DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors";
-
-const DEFAULT_TENANT_ID = "system";
-const DEFAULT_ACTOR_ID = "system";
 
 const toSafeUser = (user: typeof schema.users.$inferSelect) => {
   const { password: _password, ...safeUser } = user;
