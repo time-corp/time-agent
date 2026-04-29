@@ -20,6 +20,7 @@
     "welcomeHintThree": "Trang realtime vẫn giữ demo SSE và WebSocket.",
     "realtimeTitle": "Demo realtime",
     "realtimeBody": "SSE và WebSocket đang được giữ riêng ở đây trong khi phần shell tiếp tục migrate.",
+    "builtInTools": "Công cụ tích hợp",
     "chat": "Chat",
     "chatMode": "Chế độ",
     "chatGenerate": "Generate",

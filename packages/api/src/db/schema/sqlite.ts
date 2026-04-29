@@ -1,3 +1,6 @@
 export * from "./users.sqlite"
 export * from "./providers.sqlite"
 export * from "./agents.sqlite"
+export * from "./tools.sqlite"
+export * from "./tool-assignments.sqlite"
+export * from "./skill-assignments.sqlite"

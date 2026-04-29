@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as RealtimeRouteImport } from './routes/realtime'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as ModelsRouteImport } from './routes/models'
@@ -32,6 +33,11 @@ import { Route as AgentConfigsAgentConfigIdEditRouteImport } from './routes/agen
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RealtimeRoute = RealtimeRouteImport.update({
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
   '/realtime': typeof RealtimeRoute
+  '/tools': typeof ToolsRoute
   '/users': typeof UsersRouteWithChildren
   '/agent-configs/create': typeof AgentConfigsCreateRoute
   '/models/create': typeof ModelsCreateRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/realtime': typeof RealtimeRoute
+  '/tools': typeof ToolsRoute
   '/agent-configs/create': typeof AgentConfigsCreateRoute
   '/models/create': typeof ModelsCreateRoute
   '/providers/create': typeof ProvidersCreateRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
   '/realtime': typeof RealtimeRoute
+  '/tools': typeof ToolsRoute
   '/users': typeof UsersRouteWithChildren
   '/agent-configs/create': typeof AgentConfigsCreateRoute
   '/models/create': typeof ModelsCreateRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/providers'
     | '/realtime'
+    | '/tools'
     | '/users'
     | '/agent-configs/create'
     | '/models/create'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/realtime'
+    | '/tools'
     | '/agent-configs/create'
     | '/models/create'
     | '/providers/create'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/providers'
     | '/realtime'
+    | '/tools'
     | '/users'
     | '/agent-configs/create'
     | '/models/create'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   ModelsRoute: typeof ModelsRouteWithChildren
   ProvidersRoute: typeof ProvidersRouteWithChildren
   RealtimeRoute: typeof RealtimeRoute
+  ToolsRoute: typeof ToolsRoute
   UsersRoute: typeof UsersRouteWithChildren
 }
 
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools': {
+      id: '/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/realtime': {
@@ -464,6 +484,7 @@ const rootRouteChildren: RootRouteChildren = {
   ModelsRoute: ModelsRouteWithChildren,
   ProvidersRoute: ProvidersRouteWithChildren,
   RealtimeRoute: RealtimeRoute,
+  ToolsRoute: ToolsRoute,
   UsersRoute: UsersRouteWithChildren,
 }
 export const routeTree = rootRouteImport

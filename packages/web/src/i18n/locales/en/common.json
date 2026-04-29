@@ -20,6 +20,7 @@
     "welcomeHintThree": "The realtime page keeps the SSE and WebSocket demos.",
     "realtimeTitle": "Realtime demos",
     "realtimeBody": "SSE and WebSocket remain isolated here while the shell migration moves forward.",
+    "builtInTools": "Built-in Tools",
     "chat": "Chat",
     "chatMode": "Mode",
     "chatGenerate": "Generate",

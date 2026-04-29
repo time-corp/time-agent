@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "module": "src/index.ts",
   "scripts": {
+    "predev": "lsof -ti:${PORT:-3000} | xargs kill -9 2>/dev/null; true",
     "dev": "bun run --hot src/index.ts",
     "build": "bun build --compile src/index.ts --outfile dist/api --external cpu-features --external electron --external chromium-bidi",
     "db:ensure": "bun run src/db/ensure.ts",
@@ -10,6 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "bun run src/db/seed.ts",
+    "db:seed-tools": "bun run src/db/seed-tools.ts",
     "db:studio": "drizzle-kit studio",
     "db:init": "bun run db:ensure && bun run db:push && bun run db:seed"
   },

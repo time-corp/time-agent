@@ -1,3 +1,6 @@
 export * from "./users.pg"
 export * from "./providers.pg"
 export * from "./agents.pg"
+export * from "./tools.pg"
+export * from "./tool-assignments.pg"
+export * from "./skill-assignments.pg"

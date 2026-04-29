@@ -11,3 +11,13 @@ export {
   updateProviderSchema,
 } from "./provider";
 export { createUserSchema, updateUserSchema, userSchema } from "./user";
+export {
+  toolSchema,
+  toolAssignmentSchema,
+  toolWithEffectiveStateSchema,
+  upsertToolAssignmentSchema,
+  skillAssignmentSchema,
+  createSkillAssignmentSchema,
+  toolCategorySchema,
+  targetKindSchema,
+} from "./tool";

@@ -10,3 +10,12 @@ export type {
   UpdateProviderInput,
 } from "./provider"
 export type { CreateUserInput, UpdateUserInput, User } from "./user";
+export type {
+  Tool,
+  ToolAssignment,
+  ToolWithEffectiveState,
+  UpsertToolAssignmentInput,
+  TargetKind,
+  SkillAssignment,
+  CreateSkillAssignmentInput,
+} from "../schemas/tool";

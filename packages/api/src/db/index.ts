@@ -86,6 +86,49 @@ const createSqliteDatabase = () => {
     );
   `);
 
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS tools (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      key VARCHAR(64) NOT NULL UNIQUE,
+      name VARCHAR(100) NOT NULL,
+      description VARCHAR(500),
+      category VARCHAR(32) NOT NULL,
+      default_enabled INTEGER NOT NULL DEFAULT 1,
+      requires_approval INTEGER NOT NULL DEFAULT 0,
+      config_schema VARCHAR(20000),
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS tool_assignments (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      target_id VARCHAR(128) NOT NULL,
+      target_kind VARCHAR(16) NOT NULL,
+      tool_id VARCHAR(128) NOT NULL REFERENCES tools(id),
+      is_enabled INTEGER NOT NULL DEFAULT 1,
+      config VARCHAR(20000),
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(target_id, target_kind, tool_id)
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS skill_assignments (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      target_id VARCHAR(128) NOT NULL,
+      target_kind VARCHAR(16) NOT NULL,
+      skill_name VARCHAR(100) NOT NULL,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(target_id, target_kind, skill_name)
+    );
+  `);
+
   const agentColumns = sqlite.query("PRAGMA table_info(agents)").all() as Array<{ name: string }>
   const hasProviderIdColumn = agentColumns.some((column) => column.name === "provider_id")
 

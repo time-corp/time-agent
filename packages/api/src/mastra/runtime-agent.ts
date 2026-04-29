@@ -2,8 +2,10 @@ import { Agent } from "@mastra/core/agent"
 import type { MastraModelConfig } from "@mastra/core/llm"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
+import { DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors"
-import { defaultAgentTools } from "./tools"
+import { resolveToolsByKeys } from "./tools/registry"
+import { resolveEnabledKeysForAgent } from "../services/tool-service"
 
 const parseJsonConfig = (value: string) => {
   try {
@@ -17,20 +19,22 @@ const resolveProviderModel = (
   provider: typeof schema.providers.$inferSelect,
   modelName: string
 ): MastraModelConfig => {
-  const apiKey = provider.apiKey ?? undefined
-  const url = provider.baseUrl ?? undefined
+  const extras = {
+    ...(provider.apiKey != null && { apiKey: provider.apiKey }),
+    ...(provider.baseUrl != null && { url: provider.baseUrl }),
+  }
 
   switch (provider.type) {
     case "openai":
-      return { id: `openai/${modelName}`, apiKey, url }
+      return { id: `openai/${modelName}`, ...extras }
     case "anthropic":
-      return { id: `anthropic/${modelName}`, apiKey, url }
+      return { id: `anthropic/${modelName}`, ...extras }
     case "ollama":
-      return { id: `ollama/${modelName}`, apiKey, url }
+      return { id: `ollama/${modelName}`, ...extras }
     case "azure":
-      return { id: `openai/${modelName}`, apiKey, url }
+      return { id: `openai/${modelName}`, ...extras }
     case "openai_compatible":
-      return { id: `openai/${modelName}`, apiKey, url }
+      return { id: `openai/${modelName}`, ...extras }
     default:
       throw new AppError(ErrorCode.VALIDATION_ERROR, `Unsupported provider type: ${provider.type}`, 422)
   }
@@ -57,18 +61,19 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     throw new AppError(ErrorCode.VALIDATION_ERROR, "Provider is inactive", 422)
   }
 
-  const toolsConfig = parseJsonConfig(agentConfig.toolsConfig)
   const memoryConfig = parseJsonConfig(agentConfig.memoryConfig)
+
+  const enabledKeys = await resolveEnabledKeysForAgent(agentConfig.id, DEFAULT_TENANT_ID)
+  const tools = resolveToolsByKeys(enabledKeys)
 
   const agent = new Agent({
     id: `agent-config-${agentConfig.id}`,
     name: agentConfig.name,
     description: agentConfig.description ?? "Runtime agent loaded from database configuration.",
-    instructions: agentConfig.systemPrompt,
+    instructions: agentConfig.systemPrompt ?? "",
     model: resolveProviderModel(provider, agentConfig.modelName),
-    tools: defaultAgentTools,
+    tools,
     rawConfig: {
-      toolsConfig,
       memoryConfig,
       agentConfigId: agentConfig.id,
       providerId: provider.id,
