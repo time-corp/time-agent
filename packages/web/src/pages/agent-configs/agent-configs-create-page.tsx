@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 import { ArrowLeftIcon, BotMessageSquareIcon } from "lucide-react"
+import { toast } from "sonner"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,9 @@ export function AgentConfigsCreatePage() {
         return
       }
       void navigate({ to: "/agent-configs" })
-    } catch {}
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create agent config")
+    }
   }
 
   return (

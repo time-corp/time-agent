@@ -9,6 +9,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { NativeSelect } from "@/components/ui/native-select"
 import { useProviderModelsQuery, type Provider } from "@/hooks/useProviders"
 import type { AgentConfigFormValues } from "@/pages/agent-configs/schemas/agent-config-schema"
+import { ModelCombobox } from "./model-combobox"
 
 type AgentConfigFormProps = {
   mode: "create" | "update"
@@ -57,24 +58,14 @@ export function AgentConfigForm({
     form.reset(nextValues)
   }, [form, initialValues, providers])
 
-  const providerId = useWatch({
-    control: form.control,
-    name: "providerId",
-  })
-  const modelSource = useWatch({
-    control: form.control,
-    name: "modelSource",
-  })
-  const modelName = useWatch({
-    control: form.control,
-    name: "modelName",
-  })
-  const { data: providerModels = [], isLoading: isLoadingProviderModels } = useProviderModelsQuery(providerId)
+  const providerId = useWatch({ control: form.control, name: "providerId" })
+  const modelSource = useWatch({ control: form.control, name: "modelSource" })
+  const modelName = useWatch({ control: form.control, name: "modelName" })
+
+  const { data: providerModels = [] } = useProviderModelsQuery(providerId)
 
   const handleSave = form.handleSubmit((values) => onSubmit(values, "save"))
   const handleSaveAndContinue = form.handleSubmit((values) => onSubmit(values, "saveAndContinue"))
-
-  const selectedModelValue = modelSource === "custom" ? "__other__" : modelName
 
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSave}>
@@ -100,7 +91,7 @@ export function AgentConfigForm({
                 aria-invalid={fieldState.invalid}
                 onChange={(event) => {
                   field.onChange(event.target.value)
-                  form.setValue("modelName", "")
+                  form.setValue("modelName", "", { shouldValidate: true })
                   form.setValue("modelSource", "catalog")
                 }}
               >
@@ -118,50 +109,30 @@ export function AgentConfigForm({
           )}
         />
 
-        <Field>
-          <FieldLabel htmlFor="agent-model-name">Model</FieldLabel>
-          <NativeSelect
-            id="agent-model-name"
-            value={selectedModelValue}
-            disabled={pending || !providerId}
-            onChange={(event) => {
-              const nextValue = event.target.value
-              if (nextValue === "__other__") {
-                form.setValue("modelSource", "custom")
-                form.setValue("modelName", "")
-                return
-              }
-              form.setValue("modelSource", "catalog")
-              form.setValue("modelName", nextValue)
-            }}
-          >
-            <option value="" disabled>
-              {!providerId
-                ? "Select provider first"
-                : isLoadingProviderModels
-                  ? "Loading models..."
-                  : "Select model"}
-            </option>
-            {providerModels.map((model) => (
-              <option key={model.name} value={model.name}>
-                {model.label}
-              </option>
-            ))}
-            <option value="__other__">Other</option>
-          </NativeSelect>
-          <FieldDescription>
-            Pick a catalog model or choose Other to enter the model name manually.
-          </FieldDescription>
-        </Field>
-
-        {modelSource === "custom" ? (
-          <ControlledField
-            name="modelName"
-            control={form.control}
-            label="Custom Model Name"
-            placeholder="gpt-4.1-mini or llama3.1:8b"
-          />
-        ) : null}
+        <Controller
+          name="modelName"
+          control={form.control}
+          render={({ fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Model</FieldLabel>
+              <ModelCombobox
+                value={modelName}
+                modelSource={modelSource}
+                options={providerModels}
+                disabled={pending || !providerId}
+                invalid={fieldState.invalid}
+                onChange={(name, source) => {
+                  form.setValue("modelName", name, { shouldValidate: true })
+                  form.setValue("modelSource", source)
+                }}
+              />
+              <FieldDescription>
+                Search catalog models or type a custom model name.
+              </FieldDescription>
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
 
         <ControlledField
           name="systemPrompt"
@@ -217,10 +188,16 @@ export function AgentConfigForm({
           control={form.control}
           render={({ field }) => (
             <Field orientation="horizontal">
-              <Checkbox checked={field.value ?? false} disabled={pending} onCheckedChange={(checked) => field.onChange(checked === true)} />
+              <Checkbox
+                checked={field.value ?? false}
+                disabled={pending}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
               <div className="flex flex-col gap-1">
                 <FieldLabel>Active</FieldLabel>
-                <FieldDescription>Inactive agent configs stay stored but should not be exposed for runtime selection.</FieldDescription>
+                <FieldDescription>
+                  Inactive agent configs stay stored but should not be exposed for runtime selection.
+                </FieldDescription>
               </div>
             </Field>
           )}
@@ -229,7 +206,12 @@ export function AgentConfigForm({
 
       <div className="flex flex-wrap justify-end gap-3">
         {showSaveAndContinue ? (
-          <Button type="button" variant="outline" disabled={pending} onClick={() => void handleSaveAndContinue()}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => void handleSaveAndContinue()}
+          >
             Save & continue editing
           </Button>
         ) : null}
