@@ -69,8 +69,12 @@ const createSqliteDatabase = () => {
       id VARCHAR(128) PRIMARY KEY NOT NULL,
       name VARCHAR(120) NOT NULL,
       description VARCHAR(500),
-      model_id VARCHAR(128) NOT NULL REFERENCES models(id),
+      provider_id VARCHAR(128) NOT NULL REFERENCES providers(id),
+      model_name VARCHAR(200) NOT NULL,
+      model_source VARCHAR(16) NOT NULL DEFAULT 'catalog',
       system_prompt VARCHAR(20000) NOT NULL,
+      temperature INTEGER NOT NULL DEFAULT 70,
+      max_tokens INTEGER NOT NULL DEFAULT 4096,
       tools_config VARCHAR(20000) NOT NULL,
       memory_config VARCHAR(20000) NOT NULL,
       is_active INTEGER NOT NULL DEFAULT 1,
@@ -81,6 +85,78 @@ const createSqliteDatabase = () => {
       updated_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
   `);
+
+  const agentColumns = sqlite.query("PRAGMA table_info(agents)").all() as Array<{ name: string }>
+  const hasProviderIdColumn = agentColumns.some((column) => column.name === "provider_id")
+
+  if (!hasProviderIdColumn) {
+    sqlite.exec(`
+      CREATE TABLE agents_v2 (
+        id VARCHAR(128) PRIMARY KEY NOT NULL,
+        name VARCHAR(120) NOT NULL,
+        description VARCHAR(500),
+        provider_id VARCHAR(128) NOT NULL REFERENCES providers(id),
+        model_name VARCHAR(200) NOT NULL,
+        model_source VARCHAR(16) NOT NULL DEFAULT 'catalog',
+        system_prompt VARCHAR(20000) NOT NULL,
+        temperature INTEGER NOT NULL DEFAULT 70,
+        max_tokens INTEGER NOT NULL DEFAULT 4096,
+        tools_config VARCHAR(20000) NOT NULL,
+        memory_config VARCHAR(20000) NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+        created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+        updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+      );
+    `)
+
+    sqlite.exec(`
+      INSERT INTO agents_v2 (
+        id,
+        name,
+        description,
+        provider_id,
+        model_name,
+        model_source,
+        system_prompt,
+        temperature,
+        max_tokens,
+        tools_config,
+        memory_config,
+        is_active,
+        tenant_id,
+        created_by,
+        updated_by,
+        created_at,
+        updated_at
+      )
+      SELECT
+        agents.id,
+        agents.name,
+        agents.description,
+        models.provider_id,
+        models.model_name,
+        'catalog',
+        agents.system_prompt,
+        COALESCE(models.temperature, 70),
+        COALESCE(models.max_tokens, 4096),
+        agents.tools_config,
+        agents.memory_config,
+        agents.is_active,
+        agents.tenant_id,
+        agents.created_by,
+        agents.updated_by,
+        agents.created_at,
+        agents.updated_at
+      FROM agents
+      LEFT JOIN models ON models.id = agents.model_id;
+    `)
+
+    sqlite.exec("DROP TABLE agents;")
+    sqlite.exec("ALTER TABLE agents_v2 RENAME TO agents;")
+  }
 
   const existingColumns = sqlite
     .query("PRAGMA table_info(users)")

@@ -10,7 +10,7 @@ import {
 import { useDeferredValue, useMemo, useState } from "react"
 import { useDataTable } from "@/components/data-table/use-data-table"
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs"
-import { useModelsQuery } from "@/hooks/useModels"
+import { useProvidersQuery } from "@/hooks/useProviders"
 import { getAgentConfigColumns } from "@/pages/agent-configs/components/columns"
 
 const pageSizeOptions = [10, 20, 50] as const
@@ -22,9 +22,9 @@ export function useAgentConfigsTable(query: string) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const { data: agentConfigs = [], isLoading, isError, isFetching, refetch } = useAgentConfigsQuery()
-  const { data: models = [] } = useModelsQuery()
+  const { data: providers = [] } = useProvidersQuery()
 
-  const modelMap = new Map(models.map((model) => [model.id, model]))
+  const providerMap = new Map(providers.map((provider) => [provider.id, provider]))
   const filteredAgentConfigs = useMemo(() => {
     if (!deferredQuery) return agentConfigs
     const q = deferredQuery.toLowerCase()
@@ -32,11 +32,12 @@ export function useAgentConfigsTable(query: string) {
       (agent) =>
         agent.name.toLowerCase().includes(q) ||
         (agent.description ?? "").toLowerCase().includes(q) ||
-        modelMap.get(agent.modelId)?.modelName.toLowerCase().includes(q)
+        agent.modelName.toLowerCase().includes(q) ||
+        providerMap.get(agent.providerId)?.name.toLowerCase().includes(q)
     )
-  }, [agentConfigs, deferredQuery, modelMap])
+  }, [agentConfigs, deferredQuery, providerMap])
 
-  const columns = useMemo(() => getAgentConfigColumns({ sorting, models }), [sorting, models])
+  const columns = useMemo(() => getAgentConfigColumns({ sorting, providers }), [sorting, providers])
   const table = useDataTable({
     data: filteredAgentConfigs,
     columns,
@@ -64,6 +65,6 @@ export function useAgentConfigsTable(query: string) {
     sorting,
     setPagination,
     setSorting,
-    models,
+    providers,
   }
 }

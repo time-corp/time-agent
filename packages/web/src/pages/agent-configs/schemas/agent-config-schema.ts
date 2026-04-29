@@ -13,8 +13,12 @@ const jsonStringSchema = z.string().refine((value) => {
 export const createAgentConfigFormSchema = z.object({
   name: z.string().min(1),
   description: z.string().nullable().optional(),
-  modelId: z.string().min(1),
-  systemPrompt: z.string().min(1),
+  providerId: z.string().min(1),
+  modelName: z.string().min(1),
+  modelSource: z.enum(["catalog", "custom"]),
+  systemPrompt: z.string().nullable().optional(),
+  temperature: z.coerce.number().min(0).max(2),
+  maxTokens: z.coerce.number().int().min(1),
   toolsConfig: jsonStringSchema,
   memoryConfig: jsonStringSchema,
   isActive: z.boolean().optional(),
@@ -22,8 +26,12 @@ export const createAgentConfigFormSchema = z.object({
 
 export const updateAgentConfigFormSchema = createAgentConfigFormSchema.partial().extend({
   name: z.string().min(1),
-  modelId: z.string().min(1),
-  systemPrompt: z.string().min(1),
+  providerId: z.string().min(1),
+  modelName: z.string().min(1),
+  modelSource: z.enum(["catalog", "custom"]),
+  systemPrompt: z.string().nullable().optional(),
+  temperature: z.coerce.number().min(0).max(2),
+  maxTokens: z.coerce.number().int().min(1),
   toolsConfig: jsonStringSchema,
   memoryConfig: jsonStringSchema,
 })
@@ -31,8 +39,12 @@ export const updateAgentConfigFormSchema = createAgentConfigFormSchema.partial()
 export type AgentConfigFormValues = {
   name: string
   description?: string | null
-  modelId: string
-  systemPrompt: string
+  providerId: string
+  modelName: string
+  modelSource: "catalog" | "custom"
+  systemPrompt?: string | null
+  temperature: number
+  maxTokens: number
   toolsConfig: string
   memoryConfig: string
   isActive?: boolean

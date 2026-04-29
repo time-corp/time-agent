@@ -21,8 +21,8 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
-    const agent = await createRuntimeAgent(c.req.param("agentConfigId"))
-    const result = await agent.generate(parsed.data.messages)
+    const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
+    const result = await agent.generate(parsed.data.messages, { modelSettings })
 
     return ok(c, { text: result.text })
   })
@@ -33,8 +33,8 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
-    const agent = await createRuntimeAgent(c.req.param("agentConfigId"))
-    const result = await agent.stream(parsed.data.messages)
+    const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
+    const result = await agent.stream(parsed.data.messages, { modelSettings })
     const reader = result.textStream.getReader()
     const encoder = new TextEncoder()
 

@@ -3,6 +3,7 @@ import type { CreateProviderInput, Provider, UpdateProviderInput } from "@time/s
 import { request } from "./api-client"
 
 export type { Provider } from "@time/shared"
+export type ProviderModelOption = { name: string; label: string }
 
 const PROVIDERS_API_BASE = "/api/v1/providers"
 const providersQueryKey = ["providers"] as const
@@ -17,6 +18,13 @@ export const useGetProviderQuery = (id: string) =>
   useQuery({
     queryKey: [...providersQueryKey, id],
     queryFn: () => request<Provider>(`${PROVIDERS_API_BASE}/${id}`),
+    enabled: Boolean(id),
+  })
+
+export const useProviderModelsQuery = (id: string) =>
+  useQuery({
+    queryKey: [...providersQueryKey, id, "models"],
+    queryFn: () => request<ProviderModelOption[]>(`${PROVIDERS_API_BASE}/${id}/models`),
     enabled: Boolean(id),
   })
 

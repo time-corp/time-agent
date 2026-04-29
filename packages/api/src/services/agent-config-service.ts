@@ -14,6 +14,7 @@ const parseJsonConfig = (value: string) => {
 
 const toPublicAgentConfig = (agent: typeof schema.agents.$inferSelect) => ({
   ...agent,
+  temperature: agent.temperature / 100,
   toolsConfig: parseJsonConfig(agent.toolsConfig),
   memoryConfig: parseJsonConfig(agent.memoryConfig),
 })
@@ -40,8 +41,12 @@ export const createAgentConfig = async (input: CreateAgentConfigInput) => {
       id: crypto.randomUUID(),
       name: input.name,
       description: input.description ?? null,
-      modelId: input.modelId,
+      providerId: input.providerId,
+      modelName: input.modelName,
+      modelSource: input.modelSource ?? "catalog",
       systemPrompt: input.systemPrompt,
+      temperature: Math.round((input.temperature ?? 0.7) * 100),
+      maxTokens: input.maxTokens ?? 4096,
       toolsConfig: JSON.stringify(input.toolsConfig ?? {}),
       memoryConfig: JSON.stringify(input.memoryConfig ?? {}),
       isActive: input.isActive ?? true,
@@ -66,8 +71,12 @@ export const updateAgentConfigById = async (id: string, input: UpdateAgentConfig
 
   if (input.name !== undefined) updates["name"] = input.name
   if (input.description !== undefined) updates["description"] = input.description
-  if (input.modelId !== undefined) updates["modelId"] = input.modelId
+  if (input.providerId !== undefined) updates["providerId"] = input.providerId
+  if (input.modelName !== undefined) updates["modelName"] = input.modelName
+  if (input.modelSource !== undefined) updates["modelSource"] = input.modelSource
   if (input.systemPrompt !== undefined) updates["systemPrompt"] = input.systemPrompt
+  if (input.temperature !== undefined) updates["temperature"] = Math.round(input.temperature * 100)
+  if (input.maxTokens !== undefined) updates["maxTokens"] = input.maxTokens
   if (input.toolsConfig !== undefined) updates["toolsConfig"] = JSON.stringify(input.toolsConfig)
   if (input.memoryConfig !== undefined) updates["memoryConfig"] = JSON.stringify(input.memoryConfig)
   if (input.isActive !== undefined) updates["isActive"] = input.isActive

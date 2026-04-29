@@ -4,7 +4,7 @@ import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
 import { useCreateAgentConfigMutation } from "@/hooks/useAgentConfigs"
-import { useModelsQuery } from "@/hooks/useModels"
+import { useProvidersQuery } from "@/hooks/useProviders"
 import { AgentConfigForm } from "@/pages/agent-configs/components/agent-config-form"
 import { createAgentConfigFormSchema, type AgentConfigFormValues } from "@/pages/agent-configs/schemas/agent-config-schema"
 
@@ -13,15 +13,19 @@ const parseJsonObject = (value: string) => JSON.parse(value) as Record<string, u
 export function AgentConfigsCreatePage() {
   const navigate = useNavigate()
   const createMutation = useCreateAgentConfigMutation()
-  const { data: models = [] } = useModelsQuery()
+  const { data: providers = [] } = useProvidersQuery()
 
   const handleSubmit = async (values: AgentConfigFormValues, action: "save" | "saveAndContinue") => {
     try {
       const agentConfig = await createMutation.mutateAsync({
         name: values.name.trim(),
         description: values.description?.trim() ? values.description.trim() : null,
-        modelId: values.modelId,
-        systemPrompt: values.systemPrompt.trim(),
+        providerId: values.providerId,
+        modelName: values.modelName.trim(),
+        modelSource: values.modelSource,
+        systemPrompt: values.systemPrompt?.trim() || null,
+        temperature: Number(values.temperature),
+        maxTokens: Number(values.maxTokens),
         toolsConfig: parseJsonObject(values.toolsConfig),
         memoryConfig: parseJsonObject(values.memoryConfig),
         isActive: values.isActive ?? true,
@@ -53,11 +57,11 @@ export function AgentConfigsCreatePage() {
 
       <SectionCard contentClassName="flex flex-col gap-6">
         <p className="text-sm text-muted-foreground">
-          Agent configs point at a model and hold the prompt plus JSON blocks for tool and memory configuration.
+          Agent configs now choose a provider first, then a catalog model or a custom model name.
         </p>
         <AgentConfigForm
           mode="create"
-          models={models}
+          providers={providers}
           pending={createMutation.isPending}
           schema={createAgentConfigFormSchema}
           showSaveAndContinue

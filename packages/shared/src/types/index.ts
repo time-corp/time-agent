@@ -3,7 +3,6 @@ export type {
   CreateAgentConfigInput,
   UpdateAgentConfigInput,
 } from "./agent-config"
-export type { CreateModelInput, Model, UpdateModelInput } from "./model"
 export type {
   CreateProviderInput,
   Provider,

@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { z } from "zod"
 import { ControlledField } from "@/components/form/controlled-field"
@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { NativeSelect } from "@/components/ui/native-select"
-import type { Model } from "@/hooks/useModels"
+import { useProviderModelsQuery, type Provider } from "@/hooks/useProviders"
 import type { AgentConfigFormValues } from "@/pages/agent-configs/schemas/agent-config-schema"
 
 type AgentConfigFormProps = {
   mode: "create" | "update"
   schema: z.ZodTypeAny
-  models: Model[]
+  providers: Provider[]
   initialValues?: Partial<AgentConfigFormValues>
   pending?: boolean
   showSaveAndContinue?: boolean
@@ -23,8 +23,12 @@ type AgentConfigFormProps = {
 const emptyValues: AgentConfigFormValues = {
   name: "",
   description: "",
-  modelId: "",
+  providerId: "",
+  modelName: "",
+  modelSource: "catalog",
   systemPrompt: "",
+  temperature: 0.7,
+  maxTokens: 4096,
   toolsConfig: "{}",
   memoryConfig: "{}",
   isActive: true,
@@ -33,7 +37,7 @@ const emptyValues: AgentConfigFormValues = {
 export function AgentConfigForm({
   mode,
   schema,
-  models,
+  providers,
   initialValues,
   pending = false,
   showSaveAndContinue = false,
@@ -47,14 +51,30 @@ export function AgentConfigForm({
 
   useEffect(() => {
     const nextValues = { ...emptyValues, ...initialValues }
-    if (!nextValues.modelId && models[0]?.id) {
-      nextValues.modelId = models[0].id
+    if (!nextValues.providerId && providers[0]?.id) {
+      nextValues.providerId = providers[0].id
     }
     form.reset(nextValues)
-  }, [form, initialValues, models])
+  }, [form, initialValues, providers])
+
+  const providerId = useWatch({
+    control: form.control,
+    name: "providerId",
+  })
+  const modelSource = useWatch({
+    control: form.control,
+    name: "modelSource",
+  })
+  const modelName = useWatch({
+    control: form.control,
+    name: "modelName",
+  })
+  const { data: providerModels = [], isLoading: isLoadingProviderModels } = useProviderModelsQuery(providerId)
 
   const handleSave = form.handleSubmit((values) => onSubmit(values, "save"))
   const handleSaveAndContinue = form.handleSubmit((values) => onSubmit(values, "saveAndContinue"))
+
+  const selectedModelValue = modelSource === "custom" ? "__other__" : modelName
 
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSave}>
@@ -68,24 +88,28 @@ export function AgentConfigForm({
         />
 
         <Controller
-          name="modelId"
+          name="providerId"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="agent-model-id">Model</FieldLabel>
+              <FieldLabel htmlFor="agent-provider-id">Provider</FieldLabel>
               <NativeSelect
-                id="agent-model-id"
+                id="agent-provider-id"
                 value={field.value}
-                disabled={pending || models.length === 0}
+                disabled={pending || providers.length === 0}
                 aria-invalid={fieldState.invalid}
-                onChange={(event) => field.onChange(event.target.value)}
+                onChange={(event) => {
+                  field.onChange(event.target.value)
+                  form.setValue("modelName", "")
+                  form.setValue("modelSource", "catalog")
+                }}
               >
                 <option value="" disabled>
-                  {models.length === 0 ? "No models available" : "Select model"}
+                  {providers.length === 0 ? "No providers available" : "Select provider"}
                 </option>
-                {models.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.modelName}
+                {providers.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name} ({provider.type})
                   </option>
                 ))}
               </NativeSelect>
@@ -93,6 +117,51 @@ export function AgentConfigForm({
             </Field>
           )}
         />
+
+        <Field>
+          <FieldLabel htmlFor="agent-model-name">Model</FieldLabel>
+          <NativeSelect
+            id="agent-model-name"
+            value={selectedModelValue}
+            disabled={pending || !providerId}
+            onChange={(event) => {
+              const nextValue = event.target.value
+              if (nextValue === "__other__") {
+                form.setValue("modelSource", "custom")
+                form.setValue("modelName", "")
+                return
+              }
+              form.setValue("modelSource", "catalog")
+              form.setValue("modelName", nextValue)
+            }}
+          >
+            <option value="" disabled>
+              {!providerId
+                ? "Select provider first"
+                : isLoadingProviderModels
+                  ? "Loading models..."
+                  : "Select model"}
+            </option>
+            {providerModels.map((model) => (
+              <option key={model.name} value={model.name}>
+                {model.label}
+              </option>
+            ))}
+            <option value="__other__">Other</option>
+          </NativeSelect>
+          <FieldDescription>
+            Pick a catalog model or choose Other to enter the model name manually.
+          </FieldDescription>
+        </Field>
+
+        {modelSource === "custom" ? (
+          <ControlledField
+            name="modelName"
+            control={form.control}
+            label="Custom Model Name"
+            placeholder="gpt-4.1-mini or llama3.1:8b"
+          />
+        ) : null}
 
         <ControlledField
           name="systemPrompt"
@@ -102,6 +171,25 @@ export function AgentConfigForm({
           multiline
           rows={10}
         />
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <ControlledField
+            name="temperature"
+            control={form.control}
+            label="Temperature"
+            type="number"
+            placeholder="0.7"
+            description="Value between 0 and 2."
+          />
+          <ControlledField
+            name="maxTokens"
+            control={form.control}
+            label="Max Tokens"
+            type="number"
+            placeholder="4096"
+            description="Generation limit for this agent config."
+          />
+        </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
           <ControlledField
@@ -145,7 +233,7 @@ export function AgentConfigForm({
             Save & continue editing
           </Button>
         ) : null}
-        <Button type="submit" disabled={pending || models.length === 0}>
+        <Button type="submit" disabled={pending || providers.length === 0}>
           {mode === "create" ? "Create agent config" : "Save changes"}
         </Button>
       </div>

@@ -5,8 +5,8 @@ import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useAgentConfigsQuery, useGetAgentConfigQuery, useUpdateAgentConfigMutation } from "@/hooks/useAgentConfigs"
-import { useModelsQuery } from "@/hooks/useModels"
+import { useGetAgentConfigQuery, useUpdateAgentConfigMutation } from "@/hooks/useAgentConfigs"
+import { useProvidersQuery } from "@/hooks/useProviders"
 import { AgentConfigForm } from "@/pages/agent-configs/components/agent-config-form"
 import { updateAgentConfigFormSchema, type AgentConfigFormValues } from "@/pages/agent-configs/schemas/agent-config-schema"
 
@@ -16,7 +16,7 @@ const parseJsonObject = (value: string) => JSON.parse(value) as Record<string, u
 export function AgentConfigsEditPage({ agentConfigId }: { agentConfigId: string }) {
   const navigate = useNavigate()
   const { data: agentConfig, isLoading, isError } = useGetAgentConfigQuery(agentConfigId)
-  const { data: models = [] } = useModelsQuery()
+  const { data: providers = [] } = useProvidersQuery()
   const updateMutation = useUpdateAgentConfigMutation()
 
   const handleSubmit = async (values: AgentConfigFormValues) => {
@@ -26,8 +26,12 @@ export function AgentConfigsEditPage({ agentConfigId }: { agentConfigId: string 
         payload: {
           name: values.name.trim(),
           description: values.description?.trim() ? values.description.trim() : null,
-          modelId: values.modelId,
-          systemPrompt: values.systemPrompt.trim(),
+          providerId: values.providerId,
+          modelName: values.modelName.trim(),
+          modelSource: values.modelSource,
+          systemPrompt: values.systemPrompt?.trim() || null,
+          temperature: Number(values.temperature),
+          maxTokens: Number(values.maxTokens),
           toolsConfig: parseJsonObject(values.toolsConfig),
           memoryConfig: parseJsonObject(values.memoryConfig),
           isActive: values.isActive,
@@ -67,12 +71,16 @@ export function AgentConfigsEditPage({ agentConfigId }: { agentConfigId: string 
         <SectionCard>
           <AgentConfigForm
             mode="update"
-            models={models}
+            providers={providers}
             initialValues={{
               name: agentConfig.name,
               description: agentConfig.description ?? "",
-              modelId: agentConfig.modelId,
+              providerId: agentConfig.providerId,
+              modelName: agentConfig.modelName,
+              modelSource: agentConfig.modelSource,
               systemPrompt: agentConfig.systemPrompt,
+              temperature: agentConfig.temperature,
+              maxTokens: agentConfig.maxTokens,
               toolsConfig: stringifyJson(agentConfig.toolsConfig),
               memoryConfig: stringifyJson(agentConfig.memoryConfig),
               isActive: agentConfig.isActive,

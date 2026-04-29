@@ -4,6 +4,34 @@ import { db, schema } from "../db"
 import { DEFAULT_ACTOR_ID, DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors"
 
+const providerModelCatalog: Record<
+  typeof schema.providers.$inferSelect["type"],
+  Array<{ name: string; label: string }>
+> = {
+  openai: [
+    { name: "gpt-4o-mini", label: "gpt-4o-mini" },
+    { name: "gpt-4.1-mini", label: "gpt-4.1-mini" },
+    { name: "gpt-4.1", label: "gpt-4.1" },
+    { name: "o4-mini", label: "o4-mini" },
+  ],
+  anthropic: [
+    { name: "claude-3-5-haiku-latest", label: "claude-3-5-haiku-latest" },
+    { name: "claude-3-7-sonnet-latest", label: "claude-3-7-sonnet-latest" },
+    { name: "claude-sonnet-4-20250514", label: "claude-sonnet-4-20250514" },
+  ],
+  ollama: [
+    { name: "llama3.1:8b", label: "llama3.1:8b" },
+    { name: "qwen2.5:7b", label: "qwen2.5:7b" },
+    { name: "mistral:7b", label: "mistral:7b" },
+  ],
+  azure: [
+    { name: "azure-gpt-4o-mini", label: "azure-gpt-4o-mini" },
+    { name: "azure-gpt-4o", label: "azure-gpt-4o" },
+    { name: "azure-o3-mini", label: "azure-o3-mini" },
+  ],
+  openai_compatible: [],
+}
+
 const toSafeProvider = (provider: typeof schema.providers.$inferSelect) => {
   const { apiKey: _apiKey, ...safeProvider } = provider
 
@@ -26,6 +54,16 @@ export const getProviderById = async (id: string) => {
   }
 
   return toSafeProvider(provider)
+}
+
+export const listProviderModels = async (id: string) => {
+  const [provider] = await db.select().from(schema.providers).where(eq(schema.providers.id, id)).limit(1)
+
+  if (!provider) {
+    throw new AppError(ErrorCode.NOT_FOUND, "Provider not found", 404)
+  }
+
+  return providerModelCatalog[provider.type] ?? []
 }
 
 export const createProvider = async (input: CreateProviderInput) => {

@@ -4,7 +4,6 @@ export {
   updateAgentConfigSchema,
 } from "./agent-config"
 export { baseEntitySchema, entityDateSchema } from "./base";
-export { createModelSchema, modelSchema, updateModelSchema } from "./model";
 export {
   createProviderSchema,
   providerSchema,

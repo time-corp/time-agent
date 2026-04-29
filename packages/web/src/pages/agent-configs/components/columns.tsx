@@ -5,17 +5,17 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { AgentConfig } from "@/hooks/useAgentConfigs"
-import type { Model } from "@/hooks/useModels"
+import type { Provider } from "@/hooks/useProviders"
 
 export function getAgentConfigColumns({
   sorting,
-  models,
+  providers,
 }: {
   sorting: SortingState
-  models: Model[]
+  providers: Provider[]
 }): ColumnDef<AgentConfig>[] {
   const nameSorted = sorting[0]?.id === "name" ? sorting[0] : null
-  const modelMap = new Map(models.map((model) => [model.id, model]))
+  const providerMap = new Map(providers.map((provider) => [provider.id, provider]))
 
   return [
     {
@@ -56,7 +56,12 @@ export function getAgentConfigColumns({
     {
       id: "model",
       header: "Model",
-      cell: ({ row }) => modelMap.get(row.original.modelId)?.modelName ?? row.original.modelId,
+      cell: ({ row }) => row.original.modelName,
+    },
+    {
+      id: "provider",
+      header: "Provider",
+      cell: ({ row }) => providerMap.get(row.original.providerId)?.name ?? row.original.providerId,
     },
     {
       accessorKey: "description",

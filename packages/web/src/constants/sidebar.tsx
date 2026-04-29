@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import {
   ActivityIcon,
-  BotIcon,
   BotMessageSquareIcon,
   HouseIcon,
   MessageSquareIcon,
@@ -28,7 +27,6 @@ export const appSidebarSections: SidebarSection[] = [
       { titleKey: "common.chat", url: "/chat", icon: MessageSquareIcon },
       { titleKey: "common.users", url: "/users", icon: UsersIcon },
       { titleKey: "common.providers", url: "/providers", icon: PlugZapIcon },
-      { titleKey: "common.models", url: "/models", icon: BotIcon },
       { titleKey: "common.agentConfigs", url: "/agent-configs", icon: BotMessageSquareIcon },
       { titleKey: "common.realtime", url: "/realtime", icon: ActivityIcon },
     ],
