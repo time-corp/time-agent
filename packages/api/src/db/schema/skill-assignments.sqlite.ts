@@ -1,11 +1,10 @@
-import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, unique } from "drizzle-orm/sqlite-core"
 import {
   ID_MAX_LENGTH,
-  SKILL_NAME_MAX_LENGTH,
   TARGET_KIND_MAX_LENGTH,
-  TENANT_ID_MAX_LENGTH,
 } from "@time/shared"
-import { sql } from "drizzle-orm"
+import { skills } from "./skills.sqlite"
+import { sqliteBaseColumns } from "./base.sqlite"
 
 export const skillAssignments = sqliteTable(
   "skill_assignments",
@@ -13,10 +12,10 @@ export const skillAssignments = sqliteTable(
     id: text("id", { length: ID_MAX_LENGTH }).primaryKey(),
     targetId: text("target_id", { length: ID_MAX_LENGTH }).notNull(),
     targetKind: text("target_kind", { length: TARGET_KIND_MAX_LENGTH }).notNull(),
-    skillName: text("skill_name", { length: SKILL_NAME_MAX_LENGTH }).notNull(),
-    tenantId: text("tenant_id", { length: TENANT_ID_MAX_LENGTH }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    skillId: text("skill_id", { length: ID_MAX_LENGTH })
+      .notNull()
+      .references(() => skills.id),
+    ...sqliteBaseColumns(),
   },
-  (t) => [unique().on(t.targetId, t.targetKind, t.skillName)],
+  (t) => [unique().on(t.tenantId, t.targetId, t.targetKind, t.skillId)],
 )

@@ -3,7 +3,6 @@ import {
   AGENT_DESCRIPTION_MAX_LENGTH,
   ID_MAX_LENGTH,
   NAME_MAX_LENGTH,
-  SKILL_NAME_MAX_LENGTH,
   TARGET_KIND_MAX_LENGTH,
   TOOL_CATEGORY_MAX_LENGTH,
   TOOL_KEY_MAX_LENGTH,
@@ -50,26 +49,8 @@ export const toolWithEffectiveStateSchema = toolSchema.extend({
   assignmentId: z.string().nullable(),
 })
 
-export const skillAssignmentSchema = z.object({
-  id: z.string().max(ID_MAX_LENGTH),
-  targetId: z.string().max(ID_MAX_LENGTH),
-  targetKind: z.string().max(TARGET_KIND_MAX_LENGTH),
-  skillName: z.string().max(SKILL_NAME_MAX_LENGTH),
-  tenantId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-})
-
-export const createSkillAssignmentSchema = z.object({
-  targetId: z.string().min(1).max(ID_MAX_LENGTH),
-  targetKind: targetKindSchema,
-  skillName: z.string().min(1).max(SKILL_NAME_MAX_LENGTH),
-})
-
 export type Tool = z.infer<typeof toolSchema>
 export type ToolAssignment = z.infer<typeof toolAssignmentSchema>
 export type UpsertToolAssignmentInput = z.infer<typeof upsertToolAssignmentSchema>
 export type ToolWithEffectiveState = z.infer<typeof toolWithEffectiveStateSchema>
 export type TargetKind = z.infer<typeof targetKindSchema>
-export type SkillAssignment = z.infer<typeof skillAssignmentSchema>
-export type CreateSkillAssignmentInput = z.infer<typeof createSkillAssignmentSchema>

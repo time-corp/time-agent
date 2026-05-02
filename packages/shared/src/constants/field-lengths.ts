@@ -19,3 +19,6 @@ export const TOOL_KEY_MAX_LENGTH = 64;
 export const TOOL_CATEGORY_MAX_LENGTH = 32;
 export const TARGET_KIND_MAX_LENGTH = 16;
 export const SKILL_NAME_MAX_LENGTH = 100;
+export const SKILL_KEY_MAX_LENGTH = 64;
+export const SKILL_VERSION_MAX_LENGTH = 20;
+export const SKILL_PATH_MAX_LENGTH = 1024;

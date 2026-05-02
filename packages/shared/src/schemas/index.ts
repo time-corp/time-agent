@@ -16,8 +16,13 @@ export {
   toolAssignmentSchema,
   toolWithEffectiveStateSchema,
   upsertToolAssignmentSchema,
-  skillAssignmentSchema,
-  createSkillAssignmentSchema,
   toolCategorySchema,
   targetKindSchema,
 } from "./tool";
+export {
+  skillSchema,
+  skillWithAssignmentStateSchema,
+  skillAssignmentSchema,
+  createSkillAssignmentSchema,
+  createSkillSchema,
+} from "./skill";

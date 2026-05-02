@@ -6,6 +6,8 @@ import { DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors"
 import { resolveToolsByKeys } from "./tools/registry"
 import { resolveEnabledKeysForAgent } from "../services/tool-service"
+import { resolveAssignedSkillPathsForAgent } from "../services/skill-assignment-service"
+import { createAgentWorkspace } from "./workspace"
 
 const parseJsonConfig = (value: string) => {
   try {
@@ -63,8 +65,15 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
 
   const memoryConfig = parseJsonConfig(agentConfig.memoryConfig)
 
-  const enabledKeys = await resolveEnabledKeysForAgent(agentConfig.id, DEFAULT_TENANT_ID)
+  const [enabledKeys, assignedSkills] = await Promise.all([
+    resolveEnabledKeysForAgent(agentConfig.id, DEFAULT_TENANT_ID),
+    resolveAssignedSkillPathsForAgent(agentConfig.id, DEFAULT_TENANT_ID),
+  ])
   const tools = resolveToolsByKeys(enabledKeys)
+  const workspace = createAgentWorkspace(
+    agentConfig.id,
+    assignedSkills.map((skill) => skill.path),
+  )
 
   const agent = new Agent({
     id: `agent-config-${agentConfig.id}`,
@@ -73,6 +82,7 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     instructions: agentConfig.systemPrompt ?? "",
     model: resolveProviderModel(provider, agentConfig.modelName),
     tools,
+    workspace,
     rawConfig: {
       memoryConfig,
       agentConfigId: agentConfig.id,
@@ -80,6 +90,7 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
       modelName: agentConfig.modelName,
       temperature: agentConfig.temperature / 100,
       maxTokens: agentConfig.maxTokens,
+      skills: assignedSkills.map((skill) => skill.key),
     },
   })
 

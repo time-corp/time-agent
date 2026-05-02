@@ -102,6 +102,24 @@ const createSqliteDatabase = () => {
   `);
 
   sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS skills (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      key VARCHAR(64) NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      description VARCHAR(500),
+      version VARCHAR(20) NOT NULL,
+      relative_path VARCHAR(1024) NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(tenant_id, key)
+    );
+  `);
+
+  sqlite.exec(`
     CREATE TABLE IF NOT EXISTS tool_assignments (
       id VARCHAR(128) PRIMARY KEY NOT NULL,
       target_id VARCHAR(128) NOT NULL,
@@ -121,11 +139,13 @@ const createSqliteDatabase = () => {
       id VARCHAR(128) PRIMARY KEY NOT NULL,
       target_id VARCHAR(128) NOT NULL,
       target_kind VARCHAR(16) NOT NULL,
-      skill_name VARCHAR(100) NOT NULL,
+      skill_id VARCHAR(128) NOT NULL REFERENCES skills(id),
       tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
       created_at INTEGER NOT NULL DEFAULT (unixepoch()),
       updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      UNIQUE(target_id, target_kind, skill_name)
+      UNIQUE(tenant_id, target_id, target_kind, skill_id)
     );
   `);
 
@@ -225,6 +245,86 @@ const createSqliteDatabase = () => {
     if (!existingColumnNames.has(column.name)) {
       sqlite.exec(column.sql);
     }
+  }
+
+  const skillAssignmentColumns = sqlite
+    .query("PRAGMA table_info(skill_assignments)")
+    .all() as Array<{ name: string }>
+  const skillAssignmentColumnNames = new Set(skillAssignmentColumns.map((column) => column.name))
+
+  if (!skillAssignmentColumnNames.has("skill_id") || !skillAssignmentColumnNames.has("created_by")) {
+    sqlite.exec(`
+      CREATE TABLE skill_assignments_v2 (
+        id VARCHAR(128) PRIMARY KEY NOT NULL,
+        target_id VARCHAR(128) NOT NULL,
+        target_kind VARCHAR(16) NOT NULL,
+        skill_id VARCHAR(128) NOT NULL REFERENCES skills(id),
+        tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+        created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+        updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        UNIQUE(tenant_id, target_id, target_kind, skill_id)
+      );
+    `)
+
+    if (skillAssignmentColumnNames.has("skill_name")) {
+      sqlite.exec(`
+        INSERT INTO skill_assignments_v2 (
+          id,
+          target_id,
+          target_kind,
+          skill_id,
+          tenant_id,
+          created_by,
+          updated_by,
+          created_at,
+          updated_at
+        )
+        SELECT
+          sa.id,
+          sa.target_id,
+          sa.target_kind,
+          s.id,
+          sa.tenant_id,
+          'system',
+          'system',
+          sa.created_at,
+          sa.updated_at
+        FROM skill_assignments sa
+        INNER JOIN skills s
+          ON s.tenant_id = sa.tenant_id
+         AND (s.key = sa.skill_name OR s.name = sa.skill_name);
+      `)
+    } else {
+      sqlite.exec(`
+        INSERT INTO skill_assignments_v2 (
+          id,
+          target_id,
+          target_kind,
+          skill_id,
+          tenant_id,
+          created_by,
+          updated_by,
+          created_at,
+          updated_at
+        )
+        SELECT
+          id,
+          target_id,
+          target_kind,
+          skill_id,
+          tenant_id,
+          COALESCE(created_by, 'system'),
+          COALESCE(updated_by, 'system'),
+          created_at,
+          updated_at
+        FROM skill_assignments;
+      `)
+    }
+
+    sqlite.exec("DROP TABLE skill_assignments;")
+    sqlite.exec("ALTER TABLE skill_assignments_v2 RENAME TO skill_assignments;")
   }
 
   return sqlite;

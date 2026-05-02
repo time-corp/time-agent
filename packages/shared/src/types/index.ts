@@ -16,6 +16,11 @@ export type {
   ToolWithEffectiveState,
   UpsertToolAssignmentInput,
   TargetKind,
-  SkillAssignment,
-  CreateSkillAssignmentInput,
 } from "../schemas/tool";
+export type {
+  Skill,
+  SkillAssignment,
+  SkillWithAssignmentState,
+  CreateSkillAssignmentInput,
+  CreateSkillInput,
+} from "../schemas/skill";
