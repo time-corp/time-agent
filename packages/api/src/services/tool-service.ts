@@ -4,6 +4,8 @@ import { db, schema } from "../db"
 import { DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors"
 
+const DEFAULT_RUNTIME_TOOL_KEYS = ["copy_artifact", "take_screenshot", "browser"] as const
+
 export const listTools = async () => {
   return db.select().from(schema.tools).orderBy(schema.tools.category, schema.tools.name)
 }
@@ -63,6 +65,10 @@ export const resolveEnabledKeysForAgent = async (
 
   const tenantMap = new Map(tenantAssignments.map((a) => [a.toolId, a.isEnabled]))
   const agentMap = new Map(agentAssignments.map((a) => [a.toolId, a.isEnabled]))
+
+  if (allTools.length === 0) {
+    return [...DEFAULT_RUNTIME_TOOL_KEYS]
+  }
 
   return allTools
     .filter((tool) => {

@@ -8,6 +8,7 @@ import { resolveToolsByKeys } from "./tools/registry"
 import { resolveEnabledKeysForAgent } from "../services/tool-service"
 import { resolveAssignedSkillPathsForAgent } from "../services/skill-assignment-service"
 import { createAgentWorkspace } from "./workspace"
+import { buildAgentInstructions } from "./instructions"
 
 const parseJsonConfig = (value: string) => {
   try {
@@ -70,16 +71,27 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     resolveAssignedSkillPathsForAgent(agentConfig.id, DEFAULT_TENANT_ID),
   ])
   const tools = resolveToolsByKeys(enabledKeys)
+  const instructions = buildAgentInstructions(agentConfig.systemPrompt)
   const workspace = createAgentWorkspace(
     agentConfig.id,
     assignedSkills.map((skill) => skill.path),
+  )
+
+  console.log("[runtime-agent] agentConfigId:", agentConfig.id)
+  console.log("[runtime-agent] providerId:", provider.id)
+  console.log("[runtime-agent] model:", `${provider.type}/${agentConfig.modelName}`)
+  console.log("[runtime-agent] enabledKeys:", enabledKeys.join(", ") || "(none)")
+  console.log("[runtime-agent] runtimeTools:", Object.keys(tools).join(", ") || "(none)")
+  console.log(
+    "[runtime-agent] instructionsPreview:",
+    instructions.slice(0, 400).replace(/\s+/g, " "),
   )
 
   const agent = new Agent({
     id: `agent-config-${agentConfig.id}`,
     name: agentConfig.name,
     description: agentConfig.description ?? "Runtime agent loaded from database configuration.",
-    instructions: agentConfig.systemPrompt ?? "",
+    instructions,
     model: resolveProviderModel(provider, agentConfig.modelName),
     tools,
     workspace,
