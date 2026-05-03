@@ -44,8 +44,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx playwright@1.59.1 install --with-deps chromium --only-shell
 
 # Wrapper to inject container-safe Chromium flags
-RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort | head -1)" && \
-    if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -name chrome -type f | sort | head -1)"; fi && \
+RUN CHROMIUM="$(find /ms-playwright -name 'chrome-headless-shell' -type f | sort | head -1)" && \
+    if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort | head -1)"; fi && \
+    if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -name 'chrome' -type f | sort | head -1)"; fi && \
     test -n "$CHROMIUM" && \
     printf '%s\n' \
       '#!/bin/sh' \
