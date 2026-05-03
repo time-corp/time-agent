@@ -34,7 +34,21 @@ COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort | head -1)" && \
     if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -name chrome -type f | sort | head -1)"; fi && \
     test -n "$CHROMIUM" && \
-    printf '#!/bin/sh\nexec "%s" --no-sandbox --disable-dev-shm-usage --disable-crashpad --disable-crash-reporter "$@"\n' "$CHROMIUM" \
+    printf '%s\n' \
+      '#!/bin/sh' \
+      'set -eu' \
+      '' \
+      'mkdir -p /tmp/chrome-profile /tmp/chrome-crashpad' \
+      'export CHROME_CRASHPAD_PIPE_NAME=/tmp/chrome-crashpad/pipe' \
+      '' \
+      "exec \"$CHROMIUM\" \\" \
+      '  --no-sandbox \' \
+      '  --disable-dev-shm-usage \' \
+      '  --disable-breakpad \' \
+      '  --disable-crash-reporter \' \
+      '  --disable-crashpad \' \
+      '  --user-data-dir=/tmp/chrome-profile \' \
+      '  "$@"' \
     > /usr/local/bin/chromium-wrapper && \
     chmod +x /usr/local/bin/chromium-wrapper
 
