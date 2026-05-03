@@ -38,8 +38,7 @@ RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort
       '#!/bin/sh' \
       'set -eu' \
       '' \
-      'mkdir -p /tmp/chrome-profile /tmp/chrome-crashpad' \
-      'export CHROME_CRASHPAD_PIPE_NAME=/tmp/chrome-crashpad/pipe' \
+      'mkdir -p /tmp/chrome-profile' \
       '' \
       "exec \"$CHROMIUM\" \\" \
       '  --no-sandbox \' \
