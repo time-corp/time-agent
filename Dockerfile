@@ -22,15 +22,28 @@ COPY packages ./packages
 
 RUN pnpm --filter @time/web build
 
-# Playwright image has Chromium + all system deps pre-installed
-FROM mcr.microsoft.com/playwright:v1.59.1-jammy AS runner
+FROM debian:bookworm-slim AS runner
 
-# Add bun runtime
+# Node 22 + all system tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends \
+    nodejs \
+    python3 python3-pip \
+    ripgrep ffmpeg \
+    git openssh-client \
+    docker.io && \
+    rm -rf /var/lib/apt/lists/*
+
+# Bun runtime
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-# Wrapper to inject container-safe Chromium flags.
-# Prefer the bundled Playwright Chromium binary explicitly, then fall back to a
-# generic chrome path if the layout changes in a future image version.
+# Install Playwright Chromium (headless-only shell, smaller than full browser)
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx playwright@1.59.1 install --with-deps chromium --only-shell
+
+# Wrapper to inject container-safe Chromium flags
 RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort | head -1)" && \
     if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -name chrome -type f | sort | head -1)"; fi && \
     test -n "$CHROMIUM" && \
@@ -59,7 +72,6 @@ ENV DATABASE_URL=/data/local.db
 ENV STATIC_ROOT=/app/web-dist
 ENV SERVE_WEB=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/local/bin/chromium-wrapper
 
 RUN useradd -r -u 1001 -d /app -s /usr/sbin/nologin appuser \
