@@ -29,32 +29,39 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl gnupg && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends \
-    nodejs \
+    nodejs npm \
     python3 python3-pip \
     ripgrep ffmpeg \
     git openssh-client \
     docker.io && \
     rm -rf /var/lib/apt/lists/*
 
-# Bun runtime
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-# Install Playwright Chromium
+WORKDIR /app
+
+# Copy node_modules trước — npx playwright dùng playwright-core từ đây
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=builder /app/packages/api/src ./packages/api/src
+COPY --from=builder /app/packages/api/package.json ./packages/api/package.json
+COPY --from=builder /app/packages/api/tsconfig.json ./packages/api/tsconfig.json
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/tsconfig.base.json ./tsconfig.base.json
+COPY --from=builder /app/packages/web/dist ./web-dist
+
+# Dùng playwright từ node_modules local (giống hermes)
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-RUN npx playwright@1.59.1 install --with-deps chromium
+RUN npx playwright install --with-deps chromium --only-shell
 
-# Debug: show what was installed (remove after confirming path)
-RUN find /ms-playwright -type f -name 'chrom*' | sort
-
-# Wrapper to inject container-safe Chromium flags
-RUN CHROMIUM="$(find /ms-playwright -type f \( -name 'chrome-headless-shell' -o -name 'chrome' -o -name 'chromium' \) | sort | head -1)" && \
+# Wrapper inject container-safe flags — @mastra/agent-browser không có args option
+RUN CHROMIUM="$(find /ms-playwright -type f \( -name 'chrome-headless-shell' -o -name 'chrome' \) | sort | head -1)" && \
     test -n "$CHROMIUM" && \
     printf '%s\n' \
       '#!/bin/sh' \
       'set -eu' \
-      '' \
       'mkdir -p /tmp/chrome-profile /tmp/chrome-crashes' \
-      '' \
       "exec \"$CHROMIUM\" \\" \
       '  --no-sandbox \' \
       '  --disable-dev-shm-usage \' \
@@ -65,7 +72,9 @@ RUN CHROMIUM="$(find /ms-playwright -type f \( -name 'chrome-headless-shell' -o 
     > /usr/local/bin/chromium-wrapper && \
     chmod +x /usr/local/bin/chromium-wrapper
 
-WORKDIR /app
+RUN useradd -r -u 1001 -d /app -s /usr/sbin/nologin appuser \
+    && mkdir -p /data /app/.artifacts \
+    && chown -R appuser:appuser /app /data
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -75,20 +84,6 @@ ENV STATIC_ROOT=/app/web-dist
 ENV SERVE_WEB=true
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/local/bin/chromium-wrapper
-
-RUN useradd -r -u 1001 -d /app -s /usr/sbin/nologin appuser \
-    && mkdir -p /data /app/.artifacts \
-    && chown appuser:appuser /data /app/.artifacts
-
-COPY --from=builder --chown=appuser:appuser /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:appuser /app/packages/api/node_modules ./packages/api/node_modules
-COPY --from=builder --chown=appuser:appuser /app/packages/api/src ./packages/api/src
-COPY --from=builder --chown=appuser:appuser /app/packages/api/package.json ./packages/api/package.json
-COPY --from=builder --chown=appuser:appuser /app/packages/api/tsconfig.json ./packages/api/tsconfig.json
-COPY --from=builder --chown=appuser:appuser /app/packages/shared ./packages/shared
-COPY --from=builder --chown=appuser:appuser /app/package.json ./package.json
-COPY --from=builder --chown=appuser:appuser /app/tsconfig.base.json ./tsconfig.base.json
-COPY --from=builder --chown=appuser:appuser /app/packages/web/dist ./web-dist
 
 USER appuser
 
