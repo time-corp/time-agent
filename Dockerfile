@@ -49,7 +49,7 @@ COPY --from=builder /app/packages/web/dist ./web-dist
 
 # Dùng playwright từ node_modules local (giống hermes)
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-RUN npx playwright install --with-deps chromium --only-shell
+RUN npx playwright install --with-deps chromium
 
 # Wrapper inject container-safe flags — @mastra/agent-browser không có args option
 RUN CHROMIUM="$(find /ms-playwright -type f \( -name 'chrome-headless-shell' -o -name 'chrome' \) | sort | head -1)" && \
