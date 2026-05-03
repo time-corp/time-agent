@@ -44,6 +44,8 @@ RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort
       "exec \"$CHROMIUM\" \\" \
       '  --no-sandbox \' \
       '  --disable-dev-shm-usage \' \
+      '  --disable-gpu \' \
+      '  --disable-software-rasterizer \' \
       '  --disable-breakpad \' \
       '  --disable-crash-reporter \' \
       '  --disable-crashpad \' \
