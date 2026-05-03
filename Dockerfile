@@ -39,14 +39,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Bun runtime
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-# Install Playwright Chromium (headless-only shell, smaller than full browser)
+# Install Playwright Chromium
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-RUN npx playwright@1.59.1 install --with-deps chromium --only-shell
+RUN npx playwright@1.59.1 install --with-deps chromium
+
+# Debug: show what was installed (remove after confirming path)
+RUN find /ms-playwright -type f -name 'chrom*' | sort
 
 # Wrapper to inject container-safe Chromium flags
-RUN CHROMIUM="$(find /ms-playwright -name 'chrome-headless-shell' -type f | sort | head -1)" && \
-    if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort | head -1)"; fi && \
-    if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -name 'chrome' -type f | sort | head -1)"; fi && \
+RUN CHROMIUM="$(find /ms-playwright -type f \( -name 'chrome-headless-shell' -o -name 'chrome' -o -name 'chromium' \) | sort | head -1)" && \
     test -n "$CHROMIUM" && \
     printf '%s\n' \
       '#!/bin/sh' \
