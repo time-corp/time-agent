@@ -15,7 +15,7 @@ import {
 
 const teams = [
   {
-    name: "Time Agent",
+    name: "Time Agents",
     logo: <span className="text-sm font-bold">T</span>,
     plan: "Web workspace",
   },

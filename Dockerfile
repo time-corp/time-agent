@@ -28,12 +28,13 @@ FROM mcr.microsoft.com/playwright:v1.59.1-jammy AS runner
 # Add bun runtime
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-# Wrapper to inject --no-sandbox (required for non-root in Docker).
-# Playwright browser layouts can vary across image versions, so resolve the
-# Chromium binary defensively and fail the build if none is found.
-RUN CHROMIUM="$(find /ms-playwright \( -path '*/chrome-linux/chrome' -o -name chrome \) -type f | head -1)" && \
+# Wrapper to inject container-safe Chromium flags.
+# Prefer the bundled Playwright Chromium binary explicitly, then fall back to a
+# generic chrome path if the layout changes in a future image version.
+RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort | head -1)" && \
+    if [ -z "$CHROMIUM" ]; then CHROMIUM="$(find /ms-playwright -name chrome -type f | sort | head -1)"; fi && \
     test -n "$CHROMIUM" && \
-    printf '#!/bin/sh\nexec "%s" --no-sandbox --disable-dev-shm-usage "$@"\n' "$CHROMIUM" \
+    printf '#!/bin/sh\nexec "%s" --no-sandbox --disable-dev-shm-usage --disable-crashpad --disable-crash-reporter "$@"\n' "$CHROMIUM" \
     > /usr/local/bin/chromium-wrapper && \
     chmod +x /usr/local/bin/chromium-wrapper
 
