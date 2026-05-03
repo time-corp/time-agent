@@ -38,16 +38,13 @@ RUN CHROMIUM="$(find /ms-playwright -path '*/chrome-linux/chrome' -type f | sort
       '#!/bin/sh' \
       'set -eu' \
       '' \
-      'mkdir -p /tmp/chrome-profile' \
+      'mkdir -p /tmp/chrome-profile /tmp/chrome-crashes' \
       '' \
       "exec \"$CHROMIUM\" \\" \
       '  --no-sandbox \' \
       '  --disable-dev-shm-usage \' \
       '  --disable-gpu \' \
-      '  --disable-software-rasterizer \' \
-      '  --disable-breakpad \' \
-      '  --disable-crash-reporter \' \
-      '  --disable-crashpad \' \
+      '  --crash-dumps-dir=/tmp/chrome-crashes \' \
       '  --user-data-dir=/tmp/chrome-profile \' \
       '  "$@"' \
     > /usr/local/bin/chromium-wrapper && \
