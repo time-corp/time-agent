@@ -22,14 +22,10 @@ COPY packages ./packages
 
 RUN pnpm --filter @time/web build
 
-FROM debian:bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 
-# Node 22 + all system tools
+# System tools (Node 22 already in base image)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg && \
-    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y --no-install-recommends \
-    nodejs npm \
     python3 python3-pip \
     ripgrep ffmpeg \
     git openssh-client \
