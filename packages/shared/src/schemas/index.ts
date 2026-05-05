@@ -26,3 +26,11 @@ export {
   createSkillAssignmentSchema,
   createSkillSchema,
 } from "./skill";
+export {
+  chatHistoryThreadSchema,
+  chatHistoryMessageSchema,
+} from "./chat-history";
+export type {
+  ChatHistoryThread,
+  ChatHistoryMessage,
+} from "./chat-history";

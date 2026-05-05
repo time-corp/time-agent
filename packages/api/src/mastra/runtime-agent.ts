@@ -9,6 +9,7 @@ import { resolveEnabledKeysForAgent } from "../services/tool-service";
 import { resolveAssignedSkillPathsForAgent } from "../services/skill-assignment-service";
 import { createAgentWorkspace } from "./workspace";
 import { buildAgentInstructions } from "./instructions";
+import { createAgentMemory } from "./memory";
 
 const parseJsonConfig = (value: string) => {
   try {
@@ -26,16 +27,7 @@ const resolveProviderModel = (
     ...(provider.apiKey != null && { apiKey: provider.apiKey }),
     ...(provider.baseUrl != null && { url: provider.baseUrl }),
   };
-  console.log(
-    "resolveProviderModelresolveProviderModel2",
-    provider,
-    modelName,
-    extras,
-  );
-  console.log(
-    "resolveProviderModelresolveProviderModel2ỦKL",
-    provider.baseUrl ?? "https://api.deepseek.com",
-  );
+
   switch (provider.type) {
     case "openai":
       return { id: `openai/${modelName}`, ...extras };
@@ -141,6 +133,7 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     agentConfig.id,
     assignedSkills.map((skill) => skill.path),
   );
+  const memory = createAgentMemory(memoryConfig);
 
   console.log("[runtime-agent] agentConfigId:", agentConfig.id);
   console.log("[runtime-agent] providerId:", provider.id);
@@ -174,6 +167,7 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     instructions,
     model: resolveProviderModel(provider, agentConfig.modelName),
     tools,
+    memory,
     workspace,
     rawConfig: {
       memoryConfig,

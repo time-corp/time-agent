@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SendHorizonal, Bot, User, Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
+import { useChatMessagesQuery, useChatThreadsQuery } from "@/hooks/useChatHistory";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,15 +65,57 @@ export function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedAgentConfigId, setSelectedAgentConfigId] = useState("");
+  const [threadId, setThreadId] = useState<string>(() => crypto.randomUUID());
+  const [isDraftThread, setIsDraftThread] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient()
   const { data: agentConfigs = [], isLoading: isLoadingAgentConfigs } = useAgentConfigsQuery()
   const activeAgentConfigs = agentConfigs.filter((agentConfig) => agentConfig.isActive)
+  const resourceId = selectedAgentConfigId
+  const { data: threads = [] } = useChatThreadsQuery(selectedAgentConfigId, resourceId)
+  const persistedThreadId = isDraftThread ? "" : threadId
+  const { data: threadMessages = [] } = useChatMessagesQuery(
+    selectedAgentConfigId,
+    persistedThreadId,
+    resourceId,
+  )
 
   useEffect(() => {
     if (!selectedAgentConfigId && activeAgentConfigs[0]?.id) {
       setSelectedAgentConfigId(activeAgentConfigs[0].id)
     }
   }, [activeAgentConfigs, selectedAgentConfigId])
+
+  useEffect(() => {
+    setMessages([]);
+    setThreadId(crypto.randomUUID());
+    setIsDraftThread(true)
+  }, [selectedAgentConfigId]);
+
+  useEffect(() => {
+    if (isDraftThread) {
+      return
+    }
+
+    const latestThreadId = threads[0]?.id
+
+    if (!latestThreadId) {
+      setMessages([])
+      return
+    }
+
+    setThreadId((current) => (threads.some((thread) => thread.id === current) ? current : latestThreadId))
+  }, [threads]);
+
+  useEffect(() => {
+    setMessages(
+      threadMessages.map((message) => ({
+        id: message.id,
+        role: message.role === "system" ? "assistant" : message.role,
+        content: message.content,
+      })),
+    )
+  }, [threadMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -88,19 +132,31 @@ export function ChatPage() {
     setInput("");
     setLoading(true);
 
-    const history = [...messages, userMsg].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const requestMessages = [
+      {
+        role: userMsg.role,
+        content: userMsg.content,
+      },
+    ];
+    const currentThreadId = threadId
 
     try {
       const apiBase = `/api/v1/chat/${selectedAgentConfigId}`
+      setIsDraftThread(false)
 
       if (mode === "generate") {
         const res = await fetch(`${apiBase}/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({
+            messages: requestMessages,
+            threadId,
+            resourceId,
+            threadTitle: messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
+            threadMetadata: {
+              agentConfigId: selectedAgentConfigId,
+            },
+          }),
         });
 
         if (!res.ok) {
@@ -116,7 +172,15 @@ export function ChatPage() {
         const res = await fetch(`${apiBase}/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({
+            messages: requestMessages,
+            threadId,
+            resourceId,
+            threadTitle: messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
+            threadMetadata: {
+              agentConfigId: selectedAgentConfigId,
+            },
+          }),
         });
 
         if (!res.ok) {
@@ -144,6 +208,20 @@ export function ChatPage() {
           }
         }
       }
+
+      await queryClient.invalidateQueries({
+        queryKey: ["chat-history", selectedAgentConfigId, resourceId, "threads"],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "chat-history",
+          selectedAgentConfigId,
+          resourceId,
+          "threads",
+          currentThreadId,
+          "messages",
+        ],
+      })
     } catch (err) {
       const errText = err instanceof Error ? err.message : "Error";
       setMessages((prev) =>
@@ -161,6 +239,12 @@ export function ChatPage() {
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  function startNewChat() {
+    setMessages([])
+    setThreadId(crypto.randomUUID())
+    setIsDraftThread(true)
   }
 
   return (
@@ -204,6 +288,31 @@ export function ChatPage() {
               </option>
             ))}
           </NativeSelect>
+        </div>
+
+        <div className="flex items-center gap-2 md:min-w-72">
+          <span className="text-xs text-muted-foreground shrink-0">History:</span>
+          <NativeSelect
+            value={threadId}
+            disabled={loading}
+            onChange={(event) => {
+              setThreadId(event.target.value)
+              setIsDraftThread(false)
+            }}
+          >
+            {threads.length === 0 ? (
+              <option value={threadId}>New chat</option>
+            ) : (
+              threads.map((thread) => (
+                <option key={thread.id} value={thread.id}>
+                  {thread.title ?? "Untitled chat"}
+                </option>
+              ))
+            )}
+          </NativeSelect>
+          <Button type="button" variant="outline" size="sm" onClick={startNewChat}>
+            New chat
+          </Button>
         </div>
       </div>
 
