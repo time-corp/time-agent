@@ -1,5 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import type { MastraModelConfig } from "@mastra/core/llm";
+import type { MastraMemory } from "@mastra/core/memory";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 import { DEFAULT_TENANT_ID } from "../lib/entity-context";
@@ -167,7 +168,7 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     instructions,
     model: resolveProviderModel(provider, agentConfig.modelName),
     tools,
-    memory,
+    memory: memory as unknown as MastraMemory,
     workspace,
     rawConfig: {
       memoryConfig,

@@ -1,4 +1,5 @@
 import { Agent } from "@mastra/core/agent";
+import type { MastraMemory } from "@mastra/core/memory";
 import { defaultAgentTools } from "../tools";
 import { RUNTIME_TOOL_INSTRUCTIONS } from "../instructions";
 import { createAgentMemory } from "../memory";
@@ -11,5 +12,5 @@ export const timeAgent = new Agent({
   instructions: RUNTIME_TOOL_INSTRUCTIONS,
   model: "openai/gpt-4o-mini",
   tools: defaultAgentTools,
-  memory: createAgentMemory(),
+  memory: createAgentMemory() as unknown as MastraMemory,
 });
