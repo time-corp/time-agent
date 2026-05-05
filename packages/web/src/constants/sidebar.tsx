@@ -6,6 +6,7 @@ import {
   MessageSquareIcon,
   PlugZapIcon,
   UsersIcon,
+  UsersRoundIcon,
   WrenchIcon,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ export const appSidebarSections: SidebarSection[] = [
       { titleKey: "common.users", url: "/users", icon: UsersIcon },
       { titleKey: "common.providers", url: "/providers", icon: PlugZapIcon },
       { titleKey: "common.agentConfigs", url: "/agent-configs", icon: BotMessageSquareIcon },
+      { titleKey: "common.agentTeams", url: "/agent-teams", icon: UsersRoundIcon },
       { titleKey: "common.builtInTools", url: "/tools", icon: WrenchIcon },
       { titleKey: "common.realtime", url: "/realtime", icon: ActivityIcon },
     ],

@@ -34,3 +34,17 @@ export type {
   ChatHistoryThread,
   ChatHistoryMessage,
 } from "./chat-history";
+export {
+  agentTeamSchema,
+  agentTeamMemberSchema,
+  createAgentTeamSchema,
+  updateAgentTeamSchema,
+  createAgentTeamMemberSchema,
+} from "./agent-team";
+export type {
+  AgentTeam,
+  AgentTeamMember,
+  CreateAgentTeamInput,
+  UpdateAgentTeamInput,
+  CreateAgentTeamMemberInput,
+} from "./agent-team";

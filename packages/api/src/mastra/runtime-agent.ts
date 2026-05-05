@@ -8,6 +8,7 @@ import { AppError, ErrorCode } from "../lib/errors";
 import { resolveToolsByKeys } from "./tools/registry";
 import { resolveEnabledKeysForAgent } from "../services/tool-service";
 import { resolveAssignedSkillPathsForAgent } from "../services/skill-assignment-service";
+import { mastra } from ".";
 import { createAgentWorkspace } from "./workspace";
 import { buildAgentInstructions } from "./instructions";
 import { createAgentMemory } from "./memory";
@@ -69,7 +70,10 @@ const resolveProviderModel = (
   }
 };
 
-export const createRuntimeAgent = async (agentConfigId: string) => {
+export const createRuntimeAgent = async (
+  agentConfigId: string,
+  subAgents?: Record<string, Agent>,
+) => {
   console.log("[runtime-agent] createRuntimeAgent.input", { agentConfigId });
 
   const [agentConfig] = await db
@@ -170,6 +174,7 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
     tools,
     memory: memory as unknown as MastraMemory,
     workspace,
+    ...(subAgents ? { agents: subAgents } : {}),
     rawConfig: {
       memoryConfig,
       agentConfigId: agentConfig.id,
@@ -180,6 +185,10 @@ export const createRuntimeAgent = async (agentConfigId: string) => {
       skills: assignedSkills.map((skill) => skill.key),
     },
   });
+
+  // Runtime agents are created outside Mastra's static registry, so attach the
+  // Mastra instance explicitly to enable observability and related services.
+  agent.__registerMastra(mastra)
 
   return {
     agent,

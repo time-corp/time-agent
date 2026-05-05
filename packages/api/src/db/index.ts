@@ -149,6 +149,37 @@ const createSqliteDatabase = () => {
     );
   `);
 
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS agent_teams (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      name VARCHAR(120) NOT NULL,
+      description VARCHAR(500),
+      lead_agent_id VARCHAR(128) NOT NULL REFERENCES agents(id),
+      auto_orchestration INTEGER NOT NULL DEFAULT 1,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS agent_team_members (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      team_id VARCHAR(128) NOT NULL REFERENCES agent_teams(id) ON DELETE CASCADE,
+      agent_id VARCHAR(128) NOT NULL REFERENCES agents(id),
+      parent_agent_id VARCHAR(128) REFERENCES agents(id),
+      position INTEGER,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
   const agentColumns = sqlite.query("PRAGMA table_info(agents)").all() as Array<{ name: string }>
   const hasProviderIdColumn = agentColumns.some((column) => column.name === "provider_id")
 

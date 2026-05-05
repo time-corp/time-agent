@@ -1,15 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SendHorizonal, Bot, User, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
-import { useChatMessagesQuery, useChatThreadsQuery } from "@/hooks/useChatHistory";
+import { useAgentTeamsQuery } from "@/hooks/useAgentTeams";
+import {
+  useChatMessagesQuery,
+  useChatThreadsQuery,
+  useTeamChatMessagesQuery,
+  useTeamChatThreadsQuery,
+} from "@/hooks/useChatHistory";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 type Mode = "generate" | "stream";
+type SourceType = "agent" | "team";
+
+const EMPTY: never[] = []
 
 type Message = {
   id: string;
@@ -61,49 +70,104 @@ function parseStreamChunk(chunk: string): string {
 export function ChatPage() {
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("stream");
+  const [sourceType, setSourceType] = useState<SourceType>("agent");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedAgentConfigId, setSelectedAgentConfigId] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [threadId, setThreadId] = useState<string>(() => crypto.randomUUID());
   const [isDraftThread, setIsDraftThread] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient()
-  const { data: agentConfigs = [], isLoading: isLoadingAgentConfigs } = useAgentConfigsQuery()
-  const activeAgentConfigs = agentConfigs.filter((agentConfig) => agentConfig.isActive)
-  const resourceId = selectedAgentConfigId
-  const { data: threads = [] } = useChatThreadsQuery(selectedAgentConfigId, resourceId)
-  const persistedThreadId = isDraftThread ? "" : threadId
-  const { data: threadMessages = [] } = useChatMessagesQuery(
-    selectedAgentConfigId,
-    persistedThreadId,
-    resourceId,
+
+  const { data: agentConfigsData, isLoading: isLoadingAgentConfigs } = useAgentConfigsQuery()
+  const { data: agentTeamsData, isLoading: isLoadingTeams } = useAgentTeamsQuery()
+  const agentConfigs = agentConfigsData ?? EMPTY
+  const agentTeams = agentTeamsData ?? EMPTY
+  const activeAgentConfigs = useMemo(() => agentConfigs.filter((a) => a.isActive), [agentConfigs])
+  const activeTeams = useMemo(() => agentTeams.filter((team) => team.isActive), [agentTeams])
+
+  const selectedId = sourceType === "agent" ? selectedAgentConfigId : selectedTeamId
+  const resourceId = selectedId
+
+  const { data: agentThreadsData } = useChatThreadsQuery(
+    sourceType === "agent" ? selectedAgentConfigId : "",
+    sourceType === "agent" ? resourceId : "",
   )
+  const { data: teamThreadsData } = useTeamChatThreadsQuery(
+    sourceType === "team" ? selectedTeamId : "",
+    sourceType === "team" ? resourceId : "",
+  )
+  const agentThreads = agentThreadsData ?? EMPTY
+  const teamThreads = teamThreadsData ?? EMPTY
+  const threads = useMemo(
+    () => (sourceType === "agent" ? agentThreads : teamThreads),
+    [sourceType, agentThreads, teamThreads],
+  )
+
+  const persistedThreadId = isDraftThread ? "" : threadId
+
+  const { data: agentMessagesData } = useChatMessagesQuery(
+    sourceType === "agent" ? selectedAgentConfigId : "",
+    sourceType === "agent" ? persistedThreadId : "",
+    sourceType === "agent" ? resourceId : "",
+  )
+  const { data: teamMessagesData } = useTeamChatMessagesQuery(
+    sourceType === "team" ? selectedTeamId : "",
+    sourceType === "team" ? persistedThreadId : "",
+    sourceType === "team" ? resourceId : "",
+  )
+  const agentMessages = agentMessagesData ?? EMPTY
+  const teamMessages = teamMessagesData ?? EMPTY
+  const threadMessages = useMemo(
+    () => (sourceType === "agent" ? agentMessages : teamMessages),
+    [sourceType, agentMessages, teamMessages],
+  )
+
+  function resetChat() {
+    setMessages([])
+    setThreadId(crypto.randomUUID())
+    setIsDraftThread(true)
+  }
+
+  function handleSourceTypeChange(next: SourceType) {
+    setSourceType(next)
+    resetChat()
+  }
+
+  function handleAgentChange(agentId: string) {
+    setSelectedAgentConfigId(agentId)
+    resetChat()
+  }
+
+  function handleTeamChange(teamId: string) {
+    setSelectedTeamId(teamId)
+    resetChat()
+  }
 
   useEffect(() => {
     if (!selectedAgentConfigId && activeAgentConfigs[0]?.id) {
       setSelectedAgentConfigId(activeAgentConfigs[0].id)
+      resetChat()
     }
   }, [activeAgentConfigs, selectedAgentConfigId])
 
   useEffect(() => {
-    setMessages([]);
-    setThreadId(crypto.randomUUID());
-    setIsDraftThread(true)
-  }, [selectedAgentConfigId]);
+    if (!selectedTeamId && activeTeams[0]?.id) {
+      setSelectedTeamId(activeTeams[0].id)
+      resetChat()
+    }
+  }, [activeTeams, selectedTeamId])
 
   useEffect(() => {
-    if (isDraftThread) {
-      return
-    }
+    if (isDraftThread) return
 
     const latestThreadId = threads[0]?.id
-
     if (!latestThreadId) {
       setMessages([])
       return
     }
-
     setThreadId((current) => (threads.some((thread) => thread.id === current) ? current : latestThreadId))
   }, [threads]);
 
@@ -123,7 +187,7 @@ export function ChatPage() {
 
   async function sendMessage() {
     const content = input.trim();
-    if (!content || loading || !selectedAgentConfigId) return;
+    if (!content || loading || !selectedId) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content };
     const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
@@ -132,17 +196,18 @@ export function ChatPage() {
     setInput("");
     setLoading(true);
 
-    const requestMessages = [
-      {
-        role: userMsg.role,
-        content: userMsg.content,
-      },
-    ];
+    const requestMessages = [{ role: userMsg.role, content: userMsg.content }];
     const currentThreadId = threadId
 
     try {
-      const apiBase = `/api/v1/chat/${selectedAgentConfigId}`
-      setIsDraftThread(false)
+      const isTeam = sourceType === "team"
+      const apiBase = isTeam
+        ? `/api/v1/chat-team/${selectedTeamId}`
+        : `/api/v1/chat/${selectedAgentConfigId}`
+
+      const threadMetadata = isTeam
+        ? { teamId: selectedTeamId }
+        : { agentConfigId: selectedAgentConfigId }
 
       if (mode === "generate") {
         const res = await fetch(`${apiBase}/generate`, {
@@ -153,15 +218,11 @@ export function ChatPage() {
             threadId,
             resourceId,
             threadTitle: messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
-            threadMetadata: {
-              agentConfigId: selectedAgentConfigId,
-            },
+            threadMetadata,
           }),
         });
 
-        if (!res.ok) {
-          throw new Error(await getErrorMessage(res))
-        }
+        if (!res.ok) throw new Error(await getErrorMessage(res))
 
         const data = await res.json();
         const text: string = data.text ?? data.content ?? JSON.stringify(data);
@@ -177,19 +238,12 @@ export function ChatPage() {
             threadId,
             resourceId,
             threadTitle: messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
-            threadMetadata: {
-              agentConfigId: selectedAgentConfigId,
-            },
+            threadMetadata,
           }),
         });
 
-        if (!res.ok) {
-          throw new Error(await getErrorMessage(res))
-        }
-
-        if (!res.body) {
-          throw new Error("Stream response body is missing")
-        }
+        if (!res.ok) throw new Error(await getErrorMessage(res))
+        if (!res.body) throw new Error("Stream response body is missing")
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -209,18 +263,13 @@ export function ChatPage() {
         }
       }
 
+      setIsDraftThread(false)
+      const historyKey = isTeam ? "team-chat-history" : "chat-history"
       await queryClient.invalidateQueries({
-        queryKey: ["chat-history", selectedAgentConfigId, resourceId, "threads"],
+        queryKey: [historyKey, selectedId, resourceId, "threads"],
       })
       await queryClient.invalidateQueries({
-        queryKey: [
-          "chat-history",
-          selectedAgentConfigId,
-          resourceId,
-          "threads",
-          currentThreadId,
-          "messages",
-        ],
+        queryKey: [historyKey, selectedId, resourceId, "threads", currentThreadId, "messages"],
       })
     } catch (err) {
       const errText = err instanceof Error ? err.message : "Error";
@@ -241,15 +290,13 @@ export function ChatPage() {
     }
   }
 
-  function startNewChat() {
-    setMessages([])
-    setThreadId(crypto.randomUUID())
-    setIsDraftThread(true)
-  }
+  const isLoadingSource = sourceType === "agent" ? isLoadingAgentConfigs : isLoadingTeams
+  const hasNoSource = sourceType === "agent" ? activeAgentConfigs.length === 0 : activeTeams.length === 0
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
       <div className="flex flex-col gap-3 p-3 border-b bg-muted/30 md:flex-row md:items-center md:justify-between">
+        {/* Mode toggle */}
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground mr-2">{t("chatMode")}:</span>
           {(["generate", "stream"] as Mode[]).map((m) => (
@@ -268,35 +315,70 @@ export function ChatPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 md:min-w-72">
-          <span className="text-xs text-muted-foreground shrink-0">Agent:</span>
-          <NativeSelect
-            value={selectedAgentConfigId}
-            disabled={loading || isLoadingAgentConfigs || activeAgentConfigs.length === 0}
-            onChange={(event) => setSelectedAgentConfigId(event.target.value)}
-          >
-            <option value="" disabled>
-              {isLoadingAgentConfigs
-                ? "Loading agents..."
-                : activeAgentConfigs.length === 0
-                  ? "No active agents"
-                  : "Select agent"}
-            </option>
-            {activeAgentConfigs.map((agentConfig) => (
-              <option key={agentConfig.id} value={agentConfig.id}>
-                {agentConfig.name}
-              </option>
+        {/* Source selector: Agent | Team toggle + dropdown */}
+        <div className="flex items-center gap-2 md:min-w-80">
+          <div className="flex rounded-md border overflow-hidden shrink-0">
+            {(["agent", "team"] as SourceType[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => handleSourceTypeChange(s)}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium transition-colors",
+                  sourceType === s
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {s === "agent" ? "Agent" : "Team"}
+              </button>
             ))}
-          </NativeSelect>
+          </div>
+
+          {sourceType === "agent" ? (
+            <NativeSelect
+              value={selectedAgentConfigId}
+              disabled={loading || isLoadingAgentConfigs || activeAgentConfigs.length === 0}
+              onChange={(e) => handleAgentChange(e.target.value)}
+            >
+              <option value="" disabled>
+                {isLoadingAgentConfigs
+                  ? "Loading agents..."
+                  : activeAgentConfigs.length === 0
+                    ? "No active agents"
+                    : "Select agent"}
+              </option>
+              {activeAgentConfigs.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </NativeSelect>
+          ) : (
+            <NativeSelect
+              value={selectedTeamId}
+              disabled={loading || isLoadingTeams || activeTeams.length === 0}
+              onChange={(e) => handleTeamChange(e.target.value)}
+            >
+              <option value="" disabled>
+                {isLoadingTeams
+                  ? "Loading teams..."
+                  : activeTeams.length === 0
+                    ? "No active teams"
+                    : "Select team"}
+              </option>
+              {activeTeams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </NativeSelect>
+          )}
         </div>
 
+        {/* Thread history */}
         <div className="flex items-center gap-2 md:min-w-72">
           <span className="text-xs text-muted-foreground shrink-0">History:</span>
           <NativeSelect
             value={threadId}
             disabled={loading}
-            onChange={(event) => {
-              setThreadId(event.target.value)
+            onChange={(e) => {
+              setThreadId(e.target.value)
               setIsDraftThread(false)
             }}
           >
@@ -310,7 +392,7 @@ export function ChatPage() {
               ))
             )}
           </NativeSelect>
-          <Button type="button" variant="outline" size="sm" onClick={startNewChat}>
+          <Button type="button" variant="outline" size="sm" onClick={resetChat}>
             New chat
           </Button>
         </div>
@@ -329,10 +411,9 @@ export function ChatPage() {
             key={msg.id}
             className={cn("flex items-start gap-3", msg.role === "user" && "flex-row-reverse")}
           >
-            {/* Avatar */}
             <div
               className={cn(
-                "flex-shrink-0 size-8 rounded-full flex items-center justify-center",
+                "shrink-0 size-8 rounded-full flex items-center justify-center",
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"
@@ -341,10 +422,9 @@ export function ChatPage() {
               {msg.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
             </div>
 
-            {/* Bubble */}
             <div
               className={cn(
-                "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words",
+                "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap wrap-break-word",
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground rounded-tr-sm"
                   : "bg-muted text-foreground rounded-tl-sm"
@@ -370,14 +450,14 @@ export function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder={t("chatPlaceholder")}
             rows={1}
-            className="resize-none min-h-[40px] max-h-[160px] flex-1"
-            disabled={loading || activeAgentConfigs.length === 0}
+            className="resize-none min-h-10 max-h-40 flex-1"
+            disabled={loading || hasNoSource || isLoadingSource}
           />
           <Button
             onClick={sendMessage}
-            disabled={loading || !input.trim() || !selectedAgentConfigId}
+            disabled={loading || !input.trim() || !selectedId}
             size="icon"
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             {loading ? (
               <Loader2 className="size-4 animate-spin" />

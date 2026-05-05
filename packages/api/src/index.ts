@@ -4,9 +4,11 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { mastra } from "./mastra";
 import { agentConfigsRoute } from "./routes/agent-configs/route"
+import { agentTeamsRoute } from "./routes/agent-teams/route"
 import { toolsRoute } from "./routes/tools/route"
 import { artifactsRoute } from "./routes/artifacts";
 import { chatRoute } from "./routes/chat/route"
+import { chatTeamRoute } from "./routes/chat-team/route"
 import { healthRoute } from "./routes/health";
 import { providersRoute } from "./routes/providers/route"
 import { sseRoute } from "./routes/sse";
@@ -29,8 +31,10 @@ const app = new Hono<{ Bindings: HonoBindings; Variables: HonoVariables }>()
   .route(`${apiV1}/users`, usersRoute)
   .route(`${apiV1}/providers`, providersRoute)
   .route(`${apiV1}/agent-configs`, agentConfigsRoute)
+  .route(`${apiV1}/agent-teams`, agentTeamsRoute)
   .route(`${apiV1}/builtin-tools`, toolsRoute)
   .route(`${apiV1}/chat`, chatRoute)
+  .route(`${apiV1}/chat-team`, chatTeamRoute)
   .route(`${apiV1}/artifacts`, artifactsRoute)
   .onError(errorHandler)
   .notFound(notFoundHandler);
