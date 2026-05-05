@@ -21,8 +21,24 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
+    console.log("[chat-route] generate.request", {
+      agentConfigId: c.req.param("agentConfigId"),
+      messageCount: parsed.data.messages.length,
+      lastMessage: parsed.data.messages.at(-1)?.content ?? null,
+    })
+
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
     const result = await agent.generate(parsed.data.messages, { modelSettings })
+
+    console.log("[chat-route] generate.result", {
+      agentConfigId: c.req.param("agentConfigId"),
+      textPreview: result.text.slice(0, 300),
+      finishReason: result.finishReason,
+      usage: result.usage,
+      warnings: result.warnings,
+      response: result.response,
+      providerMetadata: result.providerMetadata,
+    })
 
     return ok(c, { text: result.text })
   })
@@ -33,10 +49,42 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
+    console.log("[chat-route] stream.request", {
+      agentConfigId: c.req.param("agentConfigId"),
+      messageCount: parsed.data.messages.length,
+      lastMessage: parsed.data.messages.at(-1)?.content ?? null,
+    })
+
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
     const result = await agent.stream(parsed.data.messages, { modelSettings })
     const reader = result.textStream.getReader()
     const encoder = new TextEncoder()
+
+    void Promise.all([
+      result.finishReason,
+      result.usage,
+      result.warnings,
+      result.response,
+      result.providerMetadata,
+      result.text,
+    ])
+      .then(([finishReason, usage, warnings, response, providerMetadata, text]) => {
+        console.log("[chat-route] stream.result", {
+          agentConfigId: c.req.param("agentConfigId"),
+          textPreview: text.slice(0, 300),
+          finishReason,
+          usage,
+          warnings,
+          response,
+          providerMetadata,
+        })
+      })
+      .catch((error) => {
+        console.error("[chat-route] stream.result.error", {
+          agentConfigId: c.req.param("agentConfigId"),
+          error,
+        })
+      })
 
     const stream = new ReadableStream<Uint8Array>({
       async pull(controller) {

@@ -11,6 +11,12 @@ import { baseEntitySchema } from "./base"
 export const providerTypeSchema = z.enum([
   "openai",
   "anthropic",
+  "deepseek",
+  "gemini",
+  "mistral",
+  "xai",
+  "groq",
+  "openrouter",
   "ollama",
   "azure",
   "openai_compatible",

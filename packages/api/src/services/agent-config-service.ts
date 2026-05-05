@@ -31,10 +31,29 @@ export const getAgentConfigById = async (id: string) => {
     throw new AppError(ErrorCode.NOT_FOUND, "Agent config not found", 404)
   }
 
+  console.log("[agent-config-service] getAgentConfigById.result", {
+    id: agent.id,
+    name: agent.name,
+    providerId: agent.providerId,
+    modelName: agent.modelName,
+    modelSource: agent.modelSource,
+    isActive: agent.isActive,
+  })
+
   return toPublicAgentConfig(agent)
 }
 
 export const createAgentConfig = async (input: CreateAgentConfigInput) => {
+  console.log("[agent-config-service] createAgentConfig.input", {
+    name: input.name,
+    providerId: input.providerId,
+    modelName: input.modelName,
+    modelSource: input.modelSource ?? "catalog",
+    temperature: input.temperature ?? 0.7,
+    maxTokens: input.maxTokens ?? 4096,
+    isActive: input.isActive ?? true,
+  })
+
   const [agent] = await db
     .insert(schema.agents)
     .values({
@@ -60,10 +79,33 @@ export const createAgentConfig = async (input: CreateAgentConfigInput) => {
     throw new AppError(ErrorCode.INTERNAL_ERROR, "Failed to create agent config", 500)
   }
 
+  console.log("[agent-config-service] createAgentConfig.result", {
+    id: agent.id,
+    name: agent.name,
+    providerId: agent.providerId,
+    modelName: agent.modelName,
+    modelSource: agent.modelSource,
+    isActive: agent.isActive,
+  })
+
   return toPublicAgentConfig(agent)
 }
 
 export const updateAgentConfigById = async (id: string, input: UpdateAgentConfigInput) => {
+  console.log("[agent-config-service] updateAgentConfigById.input", {
+    id,
+    updates: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.description !== undefined && { description: input.description }),
+      ...(input.providerId !== undefined && { providerId: input.providerId }),
+      ...(input.modelName !== undefined && { modelName: input.modelName }),
+      ...(input.modelSource !== undefined && { modelSource: input.modelSource }),
+      ...(input.temperature !== undefined && { temperature: input.temperature }),
+      ...(input.maxTokens !== undefined && { maxTokens: input.maxTokens }),
+      ...(input.isActive !== undefined && { isActive: input.isActive }),
+    },
+  })
+
   const updates: Record<string, unknown> = {
     updatedAt: new Date(),
     updatedBy: DEFAULT_ACTOR_ID,
@@ -86,6 +128,15 @@ export const updateAgentConfigById = async (id: string, input: UpdateAgentConfig
   if (!agent) {
     throw new AppError(ErrorCode.NOT_FOUND, "Agent config not found", 404)
   }
+
+  console.log("[agent-config-service] updateAgentConfigById.result", {
+    id: agent.id,
+    name: agent.name,
+    providerId: agent.providerId,
+    modelName: agent.modelName,
+    modelSource: agent.modelSource,
+    isActive: agent.isActive,
+  })
 
   return toPublicAgentConfig(agent)
 }
