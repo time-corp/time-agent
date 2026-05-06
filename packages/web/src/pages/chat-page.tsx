@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SendHorizonal, Bot, User, Loader2, GitBranch, AlertCircle, Square } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
 import { useAgentTeamsQuery } from "@/hooks/useAgentTeams";
@@ -86,6 +88,16 @@ function parseStreamChunk(chunk: string): string {
     }
   }
   return text;
+}
+
+function formatDisplayedMessage(content: string): string {
+  if (!content) return content
+
+  return content
+    .replace(/\r\n/g, "\n")
+    .replace(/([^\n])(\s+)(?=###\s)/g, "$1\n")
+    .replace(/([^\n])(\s+)(?=\d+\.\s)/g, "$1\n")
+    .replace(/([^\n])(\s+)(?=[-*•]\s)/g, "$1\n")
 }
 
 export function ChatPage() {
@@ -546,7 +558,7 @@ export function ChatPage() {
 
               <div
                 className={cn(
-                  "rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap wrap-break-word",
+                  "rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words",
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground rounded-tr-sm"
                     : "bg-muted text-foreground rounded-tl-sm"
@@ -554,8 +566,40 @@ export function ChatPage() {
               >
                 {msg.content === "" && msg.role === "assistant" ? (
                   <Loader2 className="size-4 animate-spin opacity-50" />
+                ) : msg.role === "assistant" ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ol: ({ children }) => <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>,
+                      ul: ({ children }) => <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>,
+                      li: ({ children }) => <li>{children}</li>,
+                      h1: ({ children }) => <h1 className="mb-2 text-base font-semibold last:mb-0">{children}</h1>,
+                      h2: ({ children }) => <h2 className="mb-2 text-[15px] font-semibold last:mb-0">{children}</h2>,
+                      h3: ({ children }) => <h3 className="mb-2 text-sm font-semibold last:mb-0">{children}</h3>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      code: ({ children }) => (
+                        <code className="rounded bg-background/70 px-1 py-0.5 text-[0.9em]">{children}</code>
+                      ),
+                      pre: ({ children }) => (
+                        <pre className="mb-2 overflow-x-auto rounded-lg bg-background/80 p-3 text-xs last:mb-0">{children}</pre>
+                      ),
+                      a: ({ children, href }) => (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline underline-offset-2"
+                        >
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {formatDisplayedMessage(msg.content)}
+                  </ReactMarkdown>
                 ) : (
-                  msg.content
+                  formatDisplayedMessage(msg.content)
                 )}
               </div>
             </div>
