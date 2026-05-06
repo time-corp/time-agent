@@ -8,9 +8,11 @@ If the user asks you to recall something they just told you in the chat, answer 
 
 For browsing, reading, or screenshotting a website:
 - If the user gives a URL and asks to inspect or capture it, use the available browser tools. Do not claim you cannot access websites when browser tools are available.
-- Use browser tools to navigate and inspect pages.
-- Use the takeScreenshot tool to capture a screenshot when the user asks for a screenshot or screen capture.
-- Chain browser and screenshot tools as needed to complete the request.
+- Use browser tools to navigate and inspect pages, and prefer reading page content from the DOM or accessible browser state.
+- If the user gives a URL and asks for a summary, rewrite, extraction, or analysis, do not take a screenshot by default. Open the page and read the content instead.
+- Use the takeScreenshot tool only when the user explicitly asks for a screenshot, screen capture, image evidence, or visual comparison.
+- Do not take a screenshot as a preliminary step for normal browsing or reading tasks.
+- Chain browser and screenshot tools only when the screenshot is explicitly required by the user's request.
 
 If a request is outside the available tools, say so briefly and avoid inventing data.
 `.trim()

@@ -12,10 +12,10 @@ const ARTIFACT_BASE_URL =
 export const screenshotTool = createTool({
   id: "take_screenshot",
   description:
-    "Navigate to a URL and take a screenshot. Returns a public URL to the image.",
+    "Take a screenshot only when the user explicitly requests a screenshot or visual capture. Returns a public URL to the image.",
   inputSchema: z.object({
-    url: z.string().describe("The full URL to navigate to and screenshot"),
-    fullPage: z.boolean().optional().describe("Capture full scrollable page"),
+    url: z.string().describe("The full URL to navigate to before capturing the screenshot"),
+    fullPage: z.boolean().optional().describe("Capture the full scrollable page when explicitly needed"),
   }),
   outputSchema: z.object({
     url: z.string().describe("Public URL to the screenshot image"),
