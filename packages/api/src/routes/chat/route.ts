@@ -1,16 +1,26 @@
 import { Hono } from "hono"
 import { z } from "zod"
-import type { Memory } from "@mastra/memory"
 import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
 import { createRuntimeAgent } from "../../mastra/runtime-agent"
 import { listChatMessages, listChatThreads } from "../../services/chat-history-service"
+import { getChatTrace } from "../../services/chat-trace-service"
 
 const chatIdSchema = z.string().trim().min(1).max(512)
 const threadMetadataSchema = z.record(z.string(), z.unknown())
 const historyQuerySchema = z.object({
   resourceId: chatIdSchema,
 })
+
+type ChatMemory = {
+  getThreadById(args: { threadId: string }): Promise<unknown>
+  createThread(args: {
+    threadId: string
+    resourceId: string
+    title?: string
+    metadata?: Record<string, unknown>
+  }): Promise<unknown>
+}
 
 const chatRequestSchema = z.object({
   messages: z.array(
@@ -40,7 +50,7 @@ const ensureThreadExists = async ({
   title,
   metadata,
 }: {
-  memory: Memory | null
+  memory: ChatMemory | null
   threadId?: string
   resourceId?: string
   title?: string
@@ -59,7 +69,7 @@ const ensureThreadExists = async ({
     threadId,
     resourceId,
     ...(title ? { title } : {}),
-    metadata,
+    ...(metadata ? { metadata } : {}),
   })
 }
 
@@ -89,6 +99,22 @@ export const chatRoute = new Hono()
       ),
     )
   })
+  .get("/:agentConfigId/threads/:threadId/traces/:traceId", async (c) => {
+    const parsed = historyQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) {
+      const message = parsed.error.issues.map((issue) => issue.message).join(", ")
+      return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
+    }
+
+    return ok(
+      c,
+      await getChatTrace(
+        c.req.param("traceId"),
+        parsed.data.resourceId,
+        c.req.param("threadId"),
+      ),
+    )
+  })
   .post("/:agentConfigId/generate", async (c) => {
     const parsed = chatRequestSchema.safeParse(await c.req.json())
     if (!parsed.success) {
@@ -105,18 +131,19 @@ export const chatRoute = new Hono()
     })
 
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
-    const memory = await agent.getMemory()
+    const memory = (await agent.getMemory()) ?? null
 
     await ensureThreadExists({
       memory,
-      threadId: parsed.data.threadId,
-      resourceId: parsed.data.resourceId,
-      title: parsed.data.threadTitle,
-      metadata: parsed.data.threadMetadata,
+      ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+      ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+      ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
+      ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
     })
 
     const result = await agent.generate(parsed.data.messages, {
       modelSettings,
+      abortSignal: c.req.raw.signal,
       ...(parsed.data.threadId && parsed.data.resourceId
         ? {
             memory: {
@@ -137,7 +164,7 @@ export const chatRoute = new Hono()
       providerMetadata: result.providerMetadata,
     })
 
-    return ok(c, { text: result.text })
+    return ok(c, { text: result.text, traceId: result.traceId ?? null })
   })
   .post("/:agentConfigId/stream", async (c) => {
     const parsed = chatRequestSchema.safeParse(await c.req.json())
@@ -155,18 +182,19 @@ export const chatRoute = new Hono()
     })
 
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
-    const memory = await agent.getMemory()
+    const memory = (await agent.getMemory()) ?? null
 
     await ensureThreadExists({
       memory,
-      threadId: parsed.data.threadId,
-      resourceId: parsed.data.resourceId,
-      title: parsed.data.threadTitle,
-      metadata: parsed.data.threadMetadata,
+      ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+      ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+      ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
+      ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
     })
 
     const result = await agent.stream(parsed.data.messages, {
       modelSettings,
+      abortSignal: c.req.raw.signal,
       ...(parsed.data.threadId && parsed.data.resourceId
         ? {
             memory: {
@@ -229,6 +257,7 @@ export const chatRoute = new Hono()
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",
+        ...(result.traceId ? { "X-Mastra-Trace-Id": result.traceId } : {}),
       },
     })
   })

@@ -14,6 +14,7 @@ export const chatHistoryMessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   content: z.string(),
   createdAt: z.string(),
+  traceId: z.string().min(1).max(ID_MAX_LENGTH).optional(),
 });
 
 export type ChatHistoryThread = z.infer<typeof chatHistoryThreadSchema>;

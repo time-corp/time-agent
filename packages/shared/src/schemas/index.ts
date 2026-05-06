@@ -35,6 +35,14 @@ export type {
   ChatHistoryMessage,
 } from "./chat-history";
 export {
+  chatTraceSchema,
+  chatTraceSpanSchema,
+} from "./chat-trace";
+export type {
+  ChatTrace,
+  ChatTraceSpan,
+} from "./chat-trace";
+export {
   agentTeamSchema,
   agentTeamMemberSchema,
   createAgentTeamSchema,

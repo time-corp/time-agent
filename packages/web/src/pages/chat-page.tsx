@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SendHorizonal, Bot, User, Loader2 } from "lucide-react";
+import { SendHorizonal, Bot, User, Loader2, GitBranch, AlertCircle, Square } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
 import { useAgentTeamsQuery } from "@/hooks/useAgentTeams";
 import {
   useChatMessagesQuery,
+  useChatTraceQuery,
   useChatThreadsQuery,
   useTeamChatMessagesQuery,
   useTeamChatThreadsQuery,
 } from "@/hooks/useChatHistory";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +26,26 @@ type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  traceId?: string;
 };
+
+type GenerateResponse = {
+  text: string
+  traceId?: string | null
+}
+
+type ApiEnvelope<T> = {
+  data: T
+}
+
+type TraceTreeNode = {
+  id: string
+  label: string
+  type: string
+  status: "success" | "running" | "error"
+  durationMs: number | null
+  children: TraceTreeNode[]
+}
 
 async function getErrorMessage(response: Response) {
   const contentType = response.headers.get("Content-Type") ?? ""
@@ -74,11 +95,14 @@ export function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const [selectedAgentConfigId, setSelectedAgentConfigId] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [threadId, setThreadId] = useState<string>(() => crypto.randomUUID());
   const [isDraftThread, setIsDraftThread] = useState(true);
+  const [activeTraceId, setActiveTraceId] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null)
   const queryClient = useQueryClient()
 
   const { data: agentConfigsData, isLoading: isLoadingAgentConfigs } = useAgentConfigsQuery()
@@ -124,11 +148,20 @@ export function ChatPage() {
     () => (sourceType === "agent" ? agentMessages : teamMessages),
     [sourceType, agentMessages, teamMessages],
   )
+  const traceSourceId = sourceType === "agent" ? selectedAgentConfigId : selectedTeamId
+  const { data: activeTrace, isLoading: isLoadingTrace } = useChatTraceQuery(
+    sourceType,
+    traceSourceId,
+    persistedThreadId,
+    resourceId,
+    activeTraceId,
+  )
 
   function resetChat() {
     setMessages([])
     setThreadId(crypto.randomUUID())
     setIsDraftThread(true)
+    setActiveTraceId("")
   }
 
   function handleSourceTypeChange(next: SourceType) {
@@ -177,6 +210,7 @@ export function ChatPage() {
         id: message.id,
         role: message.role === "system" ? "assistant" : message.role,
         content: message.content,
+        ...(message.traceId ? { traceId: message.traceId } : {}),
       })),
     )
   }, [threadMessages]);
@@ -195,9 +229,12 @@ export function ChatPage() {
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput("");
     setLoading(true);
+    setIsStopping(false)
 
     const requestMessages = [{ role: userMsg.role, content: userMsg.content }];
     const currentThreadId = threadId
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
 
     try {
       const isTeam = sourceType === "team"
@@ -213,6 +250,7 @@ export function ChatPage() {
         const res = await fetch(`${apiBase}/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({
             messages: requestMessages,
             threadId,
@@ -224,15 +262,25 @@ export function ChatPage() {
 
         if (!res.ok) throw new Error(await getErrorMessage(res))
 
-        const data = await res.json();
-        const text: string = data.text ?? data.content ?? JSON.stringify(data);
+        const payload = (await res.json()) as ApiEnvelope<GenerateResponse> | GenerateResponse
+        const data = isGenerateResponseEnvelope(payload) ? payload.data : payload
+        const text: string = data.text ?? JSON.stringify(data)
         setMessages((prev) =>
-          prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: text } : m))
+          prev.map((m) => (
+            m.id === assistantMsg.id
+              ? {
+                  ...m,
+                  content: text,
+                  ...(data.traceId ? { traceId: data.traceId } : {}),
+                }
+              : m
+          ))
         );
       } else {
         const res = await fetch(`${apiBase}/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({
             messages: requestMessages,
             threadId,
@@ -244,6 +292,15 @@ export function ChatPage() {
 
         if (!res.ok) throw new Error(await getErrorMessage(res))
         if (!res.body) throw new Error("Stream response body is missing")
+        const responseTraceId = res.headers.get("X-Mastra-Trace-Id") ?? undefined
+
+        if (responseTraceId) {
+          setMessages((prev) =>
+            prev.map((m) => (
+              m.id === assistantMsg.id ? { ...m, traceId: responseTraceId } : m
+            ))
+          )
+        }
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -272,6 +329,15 @@ export function ChatPage() {
         queryKey: [historyKey, selectedId, resourceId, "threads", currentThreadId, "messages"],
       })
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsg.id && m.content === "" ? { ...m, content: "[Stopped]" } : m
+          )
+        )
+        return
+      }
+
       const errText = err instanceof Error ? err.message : "Error";
       setMessages((prev) =>
         prev.map((m) =>
@@ -279,8 +345,17 @@ export function ChatPage() {
         )
       );
     } finally {
+      abortControllerRef.current = null
       setLoading(false);
+      setIsStopping(false)
     }
+  }
+
+  function stopMessage() {
+    if (!abortControllerRef.current || isStopping) return
+
+    setIsStopping(true)
+    abortControllerRef.current.abort()
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -292,6 +367,39 @@ export function ChatPage() {
 
   const isLoadingSource = sourceType === "agent" ? isLoadingAgentConfigs : isLoadingTeams
   const hasNoSource = sourceType === "agent" ? activeAgentConfigs.length === 0 : activeTeams.length === 0
+  const traceTree = useMemo<TraceTreeNode[]>(() => {
+    if (!activeTrace) return []
+
+    const nodeMap = new Map<string, TraceTreeNode>()
+    for (const span of activeTrace.spans) {
+      nodeMap.set(span.spanId, {
+        id: span.spanId,
+        label: span.entityName || span.name,
+        type: span.spanType,
+        status: span.status,
+        durationMs: span.durationMs,
+        children: [],
+      })
+    }
+
+    const roots: TraceTreeNode[] = []
+    for (const span of activeTrace.spans) {
+      const node = nodeMap.get(span.spanId)
+      if (!node) continue
+
+      if (span.parentSpanId) {
+        const parent = nodeMap.get(span.parentSpanId)
+        if (parent) {
+          parent.children.push(node)
+          continue
+        }
+      }
+
+      roots.push(node)
+    }
+
+    return roots
+  }, [activeTrace])
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
@@ -422,19 +530,34 @@ export function ChatPage() {
               {msg.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
             </div>
 
-            <div
-              className={cn(
-                "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap wrap-break-word",
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-tr-sm"
-                  : "bg-muted text-foreground rounded-tl-sm"
-              )}
-            >
-              {msg.content === "" && msg.role === "assistant" ? (
-                <Loader2 className="size-4 animate-spin opacity-50" />
-              ) : (
-                msg.content
-              )}
+            <div className={cn("max-w-[75%]", msg.role === "user" && "flex flex-col items-end")}>
+              {msg.role === "assistant" && msg.traceId ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mb-1 h-7 px-2 text-[11px] text-muted-foreground"
+                  onClick={() => setActiveTraceId(msg.traceId ?? "")}
+                >
+                  <GitBranch className="mr-1 size-3.5" />
+                  Trace
+                </Button>
+              ) : null}
+
+              <div
+                className={cn(
+                  "rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap wrap-break-word",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-tr-sm"
+                    : "bg-muted text-foreground rounded-tl-sm"
+                )}
+              >
+                {msg.content === "" && msg.role === "assistant" ? (
+                  <Loader2 className="size-4 animate-spin opacity-50" />
+                ) : (
+                  msg.content
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -454,13 +577,14 @@ export function ChatPage() {
             disabled={loading || hasNoSource || isLoadingSource}
           />
           <Button
-            onClick={sendMessage}
-            disabled={loading || !input.trim() || !selectedId}
+            onClick={loading ? stopMessage : sendMessage}
+            disabled={loading ? isStopping : !input.trim() || !selectedId}
             size="icon"
             className="shrink-0"
+            variant={loading ? "outline" : "default"}
           >
             {loading ? (
-              <Loader2 className="size-4 animate-spin" />
+              isStopping ? <Loader2 className="size-4 animate-spin" /> : <Square className="size-4 fill-current" />
             ) : (
               <SendHorizonal className="size-4" />
             )}
@@ -470,6 +594,77 @@ export function ChatPage() {
           {t("chatHint")}
         </p>
       </div>
+
+      <Sheet open={Boolean(activeTraceId)} onOpenChange={(open) => !open && setActiveTraceId("")}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>Trace graph</SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+              {activeTraceId || "No trace selected"}
+            </div>
+
+            {isLoadingTrace ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Loading trace...
+              </div>
+            ) : traceTree.length === 0 ? (
+              <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                <AlertCircle className="size-4" />
+                No trace spans found for this message.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {traceTree.map((root) => (
+                  <TraceNodeView key={root.id} node={root} depth={0} />
+                ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
+}
+
+function isGenerateResponseEnvelope(value: ApiEnvelope<GenerateResponse> | GenerateResponse): value is ApiEnvelope<GenerateResponse> {
+  return typeof value === "object" && value !== null && "data" in value
+}
+
+function TraceNodeView({ node, depth }: { node: TraceTreeNode; depth: number }) {
+  return (
+    <div className="space-y-2">
+      <div
+        className="rounded-xl border bg-background p-3"
+        style={{ marginLeft: `${depth * 18}px` }}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">{node.label}</span>
+          <span className="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            {node.type}
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide",
+              node.status === "error" && "bg-destructive/10 text-destructive",
+              node.status === "running" && "bg-amber-500/10 text-amber-700",
+              node.status === "success" && "bg-emerald-500/10 text-emerald-700",
+            )}
+          >
+            {node.status}
+          </span>
+          {typeof node.durationMs === "number" ? (
+            <span className="text-[11px] text-muted-foreground">{node.durationMs} ms</span>
+          ) : null}
+        </div>
+      </div>
+
+      {node.children.map((child) => (
+        <TraceNodeView key={child.id} node={child} depth={depth + 1} />
+      ))}
+    </div>
+  )
 }

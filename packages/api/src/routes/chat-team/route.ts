@@ -1,14 +1,20 @@
 import { Hono } from "hono"
 import { z } from "zod"
-import type { Memory } from "@mastra/memory"
 import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
 import { createRuntimeTeam } from "../../mastra/runtime-team"
 import { listTeamChatMessages, listTeamChatThreads } from "../../services/team-chat-history-service"
+import { getChatTrace } from "../../services/chat-trace-service"
 
 const chatIdSchema = z.string().trim().min(1).max(512)
 const threadMetadataSchema = z.record(z.string(), z.unknown())
 const historyQuerySchema = z.object({ resourceId: chatIdSchema })
+
+type ChatMemory = {
+  getThreadById(args: { threadId: string }): Promise<unknown>
+  createThread(args: Record<string, unknown>): Promise<unknown>
+  saveMessages(args: Record<string, unknown>): Promise<unknown>
+}
 
 const chatRequestSchema = z.object({
   messages: z.array(
@@ -39,7 +45,7 @@ const ensureThreadExists = async ({
   title,
   metadata,
 }: {
-  memory: Memory | null
+  memory: ChatMemory | null
   threadId?: string
   resourceId?: string
   title?: string
@@ -50,7 +56,12 @@ const ensureThreadExists = async ({
   const existingThread = await memory.getThreadById({ threadId })
   if (existingThread) return
 
-  await memory.createThread({ threadId, resourceId, ...(title ? { title } : {}), metadata })
+  await memory.createThread({
+    threadId,
+    resourceId,
+    ...(title ? { title } : {}),
+    ...(metadata ? { metadata } : {}),
+  })
 }
 
 const saveAssistantErrorMessage = async ({
@@ -59,7 +70,7 @@ const saveAssistantErrorMessage = async ({
   resourceId,
   text,
 }: {
-  memory: Memory | null
+  memory: ChatMemory | null
   threadId?: string
   resourceId?: string
   text: string
@@ -85,8 +96,8 @@ const saveAssistantErrorMessage = async ({
 
 const createSupervisorExecutionOptions = (input: {
   maxSteps: number
-  threadId?: string
-  resourceId?: string
+  threadId?: string | undefined
+  resourceId?: string | undefined
 }) => ({
   maxSteps: input.maxSteps,
   delegation: {
@@ -169,6 +180,21 @@ export const chatTeamRoute = new Hono()
       throw err
     }
   })
+  .get("/:teamId/threads/:threadId/traces/:traceId", async (c) => {
+    const parsed = historyQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) {
+      return fail(c, ErrorCode.VALIDATION_ERROR, parsed.error.issues.map((i) => i.message).join(", "), 400)
+    }
+
+    return ok(
+      c,
+      await getChatTrace(
+        c.req.param("traceId"),
+        parsed.data.resourceId,
+        c.req.param("threadId"),
+      ),
+    )
+  })
   .post("/:teamId/generate", async (c) => {
     const parsed = chatRequestSchema.safeParse(await c.req.json())
     if (!parsed.success) {
@@ -185,15 +211,15 @@ export const chatTeamRoute = new Hono()
     })
 
     const { supervisorAgent, modelSettings } = await createRuntimeTeam(teamId)
-    const memory = await supervisorAgent.getMemory()
+    const memory = (await supervisorAgent.getMemory()) ?? null
     console.log("[chat-team-route] generate.memory", { hasMemory: Boolean(memory) })
 
     await ensureThreadExists({
       memory,
-      threadId: parsed.data.threadId,
-      resourceId: parsed.data.resourceId,
-      title: parsed.data.threadTitle,
-      metadata: parsed.data.threadMetadata,
+      ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+      ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+      ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
+      ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
     })
     console.log("[chat-team-route] generate.thread-ready")
 
@@ -206,15 +232,16 @@ export const chatTeamRoute = new Hono()
     try {
       const result = await supervisorAgent.generate(requestMessages, {
         modelSettings,
+        abortSignal: c.req.raw.signal,
         ...createSupervisorExecutionOptions({
           maxSteps: parsed.data.maxSteps ?? 20,
-          threadId: parsed.data.threadId,
-          resourceId: parsed.data.resourceId,
+          ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+          ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
         }),
       })
       const text = result.text
       console.log("[chat-team-route] generate.result", { teamId, textLength: text.length, textPreview: text.slice(0, 200) })
-      return ok(c, { text })
+      return ok(c, { text, traceId: result.traceId ?? null })
     } catch (err) {
       console.error("[chat-team-route] generate.error", err)
       throw err
@@ -236,15 +263,15 @@ export const chatTeamRoute = new Hono()
     })
 
     const { supervisorAgent, modelSettings } = await createRuntimeTeam(teamId)
-    const memory = await supervisorAgent.getMemory()
+    const memory = (await supervisorAgent.getMemory()) ?? null
     console.log("[chat-team-route] stream.memory", { hasMemory: Boolean(memory) })
 
     await ensureThreadExists({
       memory,
-      threadId: parsed.data.threadId,
-      resourceId: parsed.data.resourceId,
-      title: parsed.data.threadTitle,
-      metadata: parsed.data.threadMetadata,
+      ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+      ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+      ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
+      ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
     })
     console.log("[chat-team-route] stream.thread-ready")
 
@@ -258,10 +285,11 @@ export const chatTeamRoute = new Hono()
     try {
       result = await supervisorAgent.stream(requestMessages, {
         modelSettings,
+        abortSignal: c.req.raw.signal,
         ...createSupervisorExecutionOptions({
           maxSteps: parsed.data.maxSteps ?? 20,
-          threadId: parsed.data.threadId,
-          resourceId: parsed.data.resourceId,
+          ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+          ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
         }),
       })
       console.log("[chat-team-route] stream.supervisor-started")
@@ -309,17 +337,18 @@ export const chatTeamRoute = new Hono()
             }
 
             if (chunk.type === "error") {
+              const chunkError = "error" in chunk ? chunk.error : undefined
               const errorMessage =
-                typeof chunk.error === "string"
-                  ? chunk.error
-                  : chunk.error?.message ?? "Agent stream failed"
+                typeof chunkError === "string"
+                  ? chunkError
+                  : chunkError?.message ?? "Agent stream failed"
               const displayMessage = `[Error] ${errorMessage}`
 
               console.error("[chat-team-route] stream.model-error", { errorMessage })
               await saveAssistantErrorMessage({
                 memory,
-                threadId: parsed.data.threadId,
-                resourceId: parsed.data.resourceId,
+                ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+                ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
                 text: displayMessage,
               })
               controller.enqueue(encoder.encode(`\n\n${displayMessage}`))
@@ -334,8 +363,8 @@ export const chatTeamRoute = new Hono()
           const displayMessage = `[Error] ${errorMessage}`
           await saveAssistantErrorMessage({
             memory,
-            threadId: parsed.data.threadId,
-            resourceId: parsed.data.resourceId,
+            ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+            ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
             text: displayMessage,
           })
           controller.enqueue(encoder.encode(`\n\n${displayMessage}`))
@@ -352,6 +381,7 @@ export const chatTeamRoute = new Hono()
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",
+        ...(result.traceId ? { "X-Mastra-Trace-Id": result.traceId } : {}),
       },
     })
   })

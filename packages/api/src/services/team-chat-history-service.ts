@@ -2,6 +2,7 @@ import type { ChatHistoryMessage, ChatHistoryThread } from "@time/shared"
 import type { MastraDBMessage } from "@mastra/core/agent/message-list"
 import { createAgentMemory } from "../mastra/memory"
 import { AppError, ErrorCode } from "../lib/errors"
+import { attachTraceIdsToMessages } from "./chat-trace-service"
 
 const toIsoString = (value: Date | string | null | undefined) => {
   if (!value) return new Date(0).toISOString()
@@ -106,7 +107,7 @@ export const listTeamChatMessages = async (
 
   const result = await memory.recall({ threadId, resourceId, perPage: false })
 
-  return result.messages
+  const messages = result.messages
     .filter((message) => !isSuppressedCompletionFeedback(message))
     .map((message) => {
       const content = extractMessageText(message)
@@ -121,4 +122,6 @@ export const listTeamChatMessages = async (
       }
     })
     .filter((message) => message.content.length > 0)
+
+  return attachTraceIdsToMessages(messages, threadId, resourceId)
 }
