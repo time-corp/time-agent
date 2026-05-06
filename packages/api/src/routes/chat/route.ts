@@ -33,6 +33,7 @@ const chatRequestSchema = z.object({
   resourceId: chatIdSchema.optional(),
   threadTitle: z.string().trim().min(1).max(200).optional(),
   threadMetadata: threadMetadataSchema.optional(),
+  maxSteps: z.number().int().min(1).max(50).optional(),
 }).superRefine((value, ctx) => {
   if ((value.threadId && !value.resourceId) || (!value.threadId && value.resourceId)) {
     ctx.addIssue({
@@ -72,6 +73,22 @@ const ensureThreadExists = async ({
     ...(metadata ? { metadata } : {}),
   })
 }
+
+const createExecutionOptions = (input: {
+  maxSteps: number
+  threadId?: string
+  resourceId?: string
+}) => ({
+  maxSteps: input.maxSteps,
+  ...(input.threadId && input.resourceId
+    ? {
+        memory: {
+          thread: input.threadId,
+          resource: input.resourceId,
+        },
+      }
+    : {}),
+})
 
 export const chatRoute = new Hono()
   .get("/:agentConfigId/threads", async (c) => {
@@ -128,6 +145,7 @@ export const chatRoute = new Hono()
       lastMessage: parsed.data.messages.at(-1)?.content ?? null,
       threadId: parsed.data.threadId ?? null,
       resourceId: parsed.data.resourceId ?? null,
+      maxSteps: parsed.data.maxSteps ?? 20,
     })
 
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
@@ -144,14 +162,11 @@ export const chatRoute = new Hono()
     const result = await agent.generate(parsed.data.messages, {
       modelSettings,
       abortSignal: c.req.raw.signal,
-      ...(parsed.data.threadId && parsed.data.resourceId
-        ? {
-            memory: {
-              thread: parsed.data.threadId,
-              resource: parsed.data.resourceId,
-            },
-          }
-        : {}),
+      ...createExecutionOptions({
+        maxSteps: parsed.data.maxSteps ?? 20,
+        ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+        ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+      }),
     })
 
     console.log("[chat-route] generate.result", {
@@ -179,6 +194,7 @@ export const chatRoute = new Hono()
       lastMessage: parsed.data.messages.at(-1)?.content ?? null,
       threadId: parsed.data.threadId ?? null,
       resourceId: parsed.data.resourceId ?? null,
+      maxSteps: parsed.data.maxSteps ?? 20,
     })
 
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
@@ -195,14 +211,11 @@ export const chatRoute = new Hono()
     const result = await agent.stream(parsed.data.messages, {
       modelSettings,
       abortSignal: c.req.raw.signal,
-      ...(parsed.data.threadId && parsed.data.resourceId
-        ? {
-            memory: {
-              thread: parsed.data.threadId,
-              resource: parsed.data.resourceId,
-            },
-          }
-        : {}),
+      ...createExecutionOptions({
+        maxSteps: parsed.data.maxSteps ?? 20,
+        ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+        ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+      }),
     })
     const reader = result.textStream.getReader()
     const encoder = new TextEncoder()

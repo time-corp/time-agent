@@ -3,19 +3,12 @@ import type { MastraDBMessage } from "@mastra/core/agent/message-list"
 import { createAgentMemory } from "../mastra/memory"
 import { AppError, ErrorCode } from "../lib/errors"
 import { attachTraceIdsToMessages } from "./chat-trace-service"
+import { extractMessageText } from "./mastra-message-service"
 
 const toIsoString = (value: Date | string | null | undefined) => {
   if (!value) return new Date(0).toISOString()
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString()
 }
-
-const extractMessageText = (message: MastraDBMessage) =>
-  message.content.parts
-    .flatMap((part) =>
-      part.type === "text" && typeof part.text === "string" ? [part.text] : []
-    )
-    .join("")
-    .trim()
 
 const isSuppressedCompletionFeedback = (message: MastraDBMessage) => {
   const metadata = (message.content as { metadata?: unknown }).metadata
@@ -115,10 +108,10 @@ export const listTeamChatMessages = async (
         message.role === "assistant" ? normalizeTeamAssistantContent(content) : content
 
       return {
-      id: message.id,
-      role: message.role,
-      content: normalizedContent,
-      createdAt: toIsoString(message.createdAt),
+        id: message.id,
+        role: message.role,
+        content: normalizedContent,
+        createdAt: toIsoString(message.createdAt),
       }
     })
     .filter((message) => message.content.length > 0)

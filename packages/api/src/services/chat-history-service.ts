@@ -1,9 +1,9 @@
 import type { ChatHistoryMessage, ChatHistoryThread } from "@time/shared";
-import type { MastraDBMessage } from "@mastra/core/agent/message-list";
 import { createAgentMemory } from "../mastra/memory";
 import { AppError, ErrorCode } from "../lib/errors";
 import { getAgentConfigById } from "./agent-config-service";
 import { attachTraceIdsToMessages } from "./chat-trace-service";
+import { extractMessageText } from "./mastra-message-service";
 
 const toIsoString = (value: Date | string | null | undefined) => {
   if (!value) {
@@ -12,14 +12,6 @@ const toIsoString = (value: Date | string | null | undefined) => {
 
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 };
-
-const extractMessageText = (message: MastraDBMessage) =>
-  message.content.parts
-    .flatMap((part) =>
-      part.type === "text" && typeof part.text === "string" ? [part.text] : []
-    )
-    .join("")
-    .trim();
 
 const createHistoryMemory = async (agentConfigId: string) => {
   const agentConfig = await getAgentConfigById(agentConfigId);
