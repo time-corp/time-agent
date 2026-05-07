@@ -3,6 +3,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { mastra } from "./mastra";
+import { channelsRoute } from "./routes/channels/route"
+import { telegramRoute } from "./routes/telegram/route"
+import { telegramBotManager } from "./services/telegram-bot-manager"
 import { agentConfigsRoute } from "./routes/agent-configs/route"
 import { agentTeamsRoute } from "./routes/agent-teams/route"
 import { toolsRoute } from "./routes/tools/route"
@@ -36,6 +39,7 @@ const app = new Hono<{ Bindings: HonoBindings; Variables: HonoVariables }>()
   .route(`${apiV1}/chat`, chatRoute)
   .route(`${apiV1}/chat-team`, chatTeamRoute)
   .route(`${apiV1}/artifacts`, artifactsRoute)
+  .route(`${apiV1}/channels`, channelsRoute)
   .onError(errorHandler)
   .notFound(notFoundHandler);
 
@@ -46,6 +50,12 @@ const mastraServer = new MastraServer({
 });
 
 await mastraServer.init();
+
+// Register custom routes AFTER Mastra init to avoid Mastra's wildcard routes shadowing them
+app.route(`${apiV1}/telegram`, telegramRoute)
+
+// Start all active Telegram bots in the background
+void telegramBotManager.init()
 
 if (serveWeb) {
   app.get("/assets/*", async (c) => {

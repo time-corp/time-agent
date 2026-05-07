@@ -13,6 +13,7 @@
     "models": "Models",
     "agentConfigs": "Agent Configs",
     "agentTeams": "Agent Teams",
+    "channels": "Channels",
     "realtime": "Realtime",
     "welcomeTitle": "TanStack-first web shell",
     "welcomeBody": "This web package now has a dashboard shell with TanStack Router, shadcn/ui, theme switching, and language switching.",

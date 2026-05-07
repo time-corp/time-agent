@@ -15,21 +15,25 @@ import { Route as RealtimeRouteImport } from './routes/realtime'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as AgentConfigsRouteImport } from './routes/agent-configs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users/index'
 import { Route as ProvidersIndexRouteImport } from './routes/providers/index'
 import { Route as ModelsIndexRouteImport } from './routes/models/index'
+import { Route as ChannelsIndexRouteImport } from './routes/channels/index'
 import { Route as AgentTeamsIndexRouteImport } from './routes/agent-teams/index'
 import { Route as AgentConfigsIndexRouteImport } from './routes/agent-configs/index'
 import { Route as UsersCreateRouteImport } from './routes/users/create'
 import { Route as ProvidersCreateRouteImport } from './routes/providers/create'
 import { Route as ModelsCreateRouteImport } from './routes/models/create'
+import { Route as ChannelsCreateRouteImport } from './routes/channels/create'
 import { Route as AgentTeamsCreateRouteImport } from './routes/agent-teams/create'
 import { Route as AgentConfigsCreateRouteImport } from './routes/agent-configs/create'
 import { Route as UsersUserIdEditRouteImport } from './routes/users/$userId/edit'
 import { Route as ProvidersProviderIdEditRouteImport } from './routes/providers/$providerId/edit'
 import { Route as ModelsModelIdEditRouteImport } from './routes/models/$modelId/edit'
+import { Route as ChannelsChannelIdEditRouteImport } from './routes/channels/$channelId/edit'
 import { Route as AgentTeamsAgentTeamIdEditRouteImport } from './routes/agent-teams/$agentTeamId/edit'
 import { Route as AgentConfigsAgentConfigIdEditRouteImport } from './routes/agent-configs/$agentConfigId/edit'
 
@@ -63,6 +67,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChannelsRoute = ChannelsRouteImport.update({
+  id: '/channels',
+  path: '/channels',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentConfigsRoute = AgentConfigsRouteImport.update({
   id: '/agent-configs',
   path: '/agent-configs',
@@ -87,6 +96,11 @@ const ModelsIndexRoute = ModelsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ModelsRoute,
+} as any)
+const ChannelsIndexRoute = ChannelsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ChannelsRoute,
 } as any)
 const AgentTeamsIndexRoute = AgentTeamsIndexRouteImport.update({
   id: '/agent-teams/',
@@ -113,6 +127,11 @@ const ModelsCreateRoute = ModelsCreateRouteImport.update({
   path: '/create',
   getParentRoute: () => ModelsRoute,
 } as any)
+const ChannelsCreateRoute = ChannelsCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => ChannelsRoute,
+} as any)
 const AgentTeamsCreateRoute = AgentTeamsCreateRouteImport.update({
   id: '/agent-teams/create',
   path: '/agent-teams/create',
@@ -138,6 +157,11 @@ const ModelsModelIdEditRoute = ModelsModelIdEditRouteImport.update({
   path: '/$modelId/edit',
   getParentRoute: () => ModelsRoute,
 } as any)
+const ChannelsChannelIdEditRoute = ChannelsChannelIdEditRouteImport.update({
+  id: '/$channelId/edit',
+  path: '/$channelId/edit',
+  getParentRoute: () => ChannelsRoute,
+} as any)
 const AgentTeamsAgentTeamIdEditRoute =
   AgentTeamsAgentTeamIdEditRouteImport.update({
     id: '/agent-teams/$agentTeamId/edit',
@@ -154,6 +178,7 @@ const AgentConfigsAgentConfigIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent-configs': typeof AgentConfigsRouteWithChildren
+  '/channels': typeof ChannelsRouteWithChildren
   '/chat': typeof ChatRoute
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
@@ -162,16 +187,19 @@ export interface FileRoutesByFullPath {
   '/users': typeof UsersRouteWithChildren
   '/agent-configs/create': typeof AgentConfigsCreateRoute
   '/agent-teams/create': typeof AgentTeamsCreateRoute
+  '/channels/create': typeof ChannelsCreateRoute
   '/models/create': typeof ModelsCreateRoute
   '/providers/create': typeof ProvidersCreateRoute
   '/users/create': typeof UsersCreateRoute
   '/agent-configs/': typeof AgentConfigsIndexRoute
   '/agent-teams/': typeof AgentTeamsIndexRoute
+  '/channels/': typeof ChannelsIndexRoute
   '/models/': typeof ModelsIndexRoute
   '/providers/': typeof ProvidersIndexRoute
   '/users/': typeof UsersIndexRoute
   '/agent-configs/$agentConfigId/edit': typeof AgentConfigsAgentConfigIdEditRoute
   '/agent-teams/$agentTeamId/edit': typeof AgentTeamsAgentTeamIdEditRoute
+  '/channels/$channelId/edit': typeof ChannelsChannelIdEditRoute
   '/models/$modelId/edit': typeof ModelsModelIdEditRoute
   '/providers/$providerId/edit': typeof ProvidersProviderIdEditRoute
   '/users/$userId/edit': typeof UsersUserIdEditRoute
@@ -183,16 +211,19 @@ export interface FileRoutesByTo {
   '/tools': typeof ToolsRoute
   '/agent-configs/create': typeof AgentConfigsCreateRoute
   '/agent-teams/create': typeof AgentTeamsCreateRoute
+  '/channels/create': typeof ChannelsCreateRoute
   '/models/create': typeof ModelsCreateRoute
   '/providers/create': typeof ProvidersCreateRoute
   '/users/create': typeof UsersCreateRoute
   '/agent-configs': typeof AgentConfigsIndexRoute
   '/agent-teams': typeof AgentTeamsIndexRoute
+  '/channels': typeof ChannelsIndexRoute
   '/models': typeof ModelsIndexRoute
   '/providers': typeof ProvidersIndexRoute
   '/users': typeof UsersIndexRoute
   '/agent-configs/$agentConfigId/edit': typeof AgentConfigsAgentConfigIdEditRoute
   '/agent-teams/$agentTeamId/edit': typeof AgentTeamsAgentTeamIdEditRoute
+  '/channels/$channelId/edit': typeof ChannelsChannelIdEditRoute
   '/models/$modelId/edit': typeof ModelsModelIdEditRoute
   '/providers/$providerId/edit': typeof ProvidersProviderIdEditRoute
   '/users/$userId/edit': typeof UsersUserIdEditRoute
@@ -201,6 +232,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agent-configs': typeof AgentConfigsRouteWithChildren
+  '/channels': typeof ChannelsRouteWithChildren
   '/chat': typeof ChatRoute
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
@@ -209,16 +241,19 @@ export interface FileRoutesById {
   '/users': typeof UsersRouteWithChildren
   '/agent-configs/create': typeof AgentConfigsCreateRoute
   '/agent-teams/create': typeof AgentTeamsCreateRoute
+  '/channels/create': typeof ChannelsCreateRoute
   '/models/create': typeof ModelsCreateRoute
   '/providers/create': typeof ProvidersCreateRoute
   '/users/create': typeof UsersCreateRoute
   '/agent-configs/': typeof AgentConfigsIndexRoute
   '/agent-teams/': typeof AgentTeamsIndexRoute
+  '/channels/': typeof ChannelsIndexRoute
   '/models/': typeof ModelsIndexRoute
   '/providers/': typeof ProvidersIndexRoute
   '/users/': typeof UsersIndexRoute
   '/agent-configs/$agentConfigId/edit': typeof AgentConfigsAgentConfigIdEditRoute
   '/agent-teams/$agentTeamId/edit': typeof AgentTeamsAgentTeamIdEditRoute
+  '/channels/$channelId/edit': typeof ChannelsChannelIdEditRoute
   '/models/$modelId/edit': typeof ModelsModelIdEditRoute
   '/providers/$providerId/edit': typeof ProvidersProviderIdEditRoute
   '/users/$userId/edit': typeof UsersUserIdEditRoute
@@ -228,6 +263,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agent-configs'
+    | '/channels'
     | '/chat'
     | '/models'
     | '/providers'
@@ -236,16 +272,19 @@ export interface FileRouteTypes {
     | '/users'
     | '/agent-configs/create'
     | '/agent-teams/create'
+    | '/channels/create'
     | '/models/create'
     | '/providers/create'
     | '/users/create'
     | '/agent-configs/'
     | '/agent-teams/'
+    | '/channels/'
     | '/models/'
     | '/providers/'
     | '/users/'
     | '/agent-configs/$agentConfigId/edit'
     | '/agent-teams/$agentTeamId/edit'
+    | '/channels/$channelId/edit'
     | '/models/$modelId/edit'
     | '/providers/$providerId/edit'
     | '/users/$userId/edit'
@@ -257,16 +296,19 @@ export interface FileRouteTypes {
     | '/tools'
     | '/agent-configs/create'
     | '/agent-teams/create'
+    | '/channels/create'
     | '/models/create'
     | '/providers/create'
     | '/users/create'
     | '/agent-configs'
     | '/agent-teams'
+    | '/channels'
     | '/models'
     | '/providers'
     | '/users'
     | '/agent-configs/$agentConfigId/edit'
     | '/agent-teams/$agentTeamId/edit'
+    | '/channels/$channelId/edit'
     | '/models/$modelId/edit'
     | '/providers/$providerId/edit'
     | '/users/$userId/edit'
@@ -274,6 +316,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agent-configs'
+    | '/channels'
     | '/chat'
     | '/models'
     | '/providers'
@@ -282,16 +325,19 @@ export interface FileRouteTypes {
     | '/users'
     | '/agent-configs/create'
     | '/agent-teams/create'
+    | '/channels/create'
     | '/models/create'
     | '/providers/create'
     | '/users/create'
     | '/agent-configs/'
     | '/agent-teams/'
+    | '/channels/'
     | '/models/'
     | '/providers/'
     | '/users/'
     | '/agent-configs/$agentConfigId/edit'
     | '/agent-teams/$agentTeamId/edit'
+    | '/channels/$channelId/edit'
     | '/models/$modelId/edit'
     | '/providers/$providerId/edit'
     | '/users/$userId/edit'
@@ -300,6 +346,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentConfigsRoute: typeof AgentConfigsRouteWithChildren
+  ChannelsRoute: typeof ChannelsRouteWithChildren
   ChatRoute: typeof ChatRoute
   ModelsRoute: typeof ModelsRouteWithChildren
   ProvidersRoute: typeof ProvidersRouteWithChildren
@@ -355,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/channels': {
+      id: '/channels'
+      path: '/channels'
+      fullPath: '/channels'
+      preLoaderRoute: typeof ChannelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agent-configs': {
       id: '/agent-configs'
       path: '/agent-configs'
@@ -389,6 +443,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/models/'
       preLoaderRoute: typeof ModelsIndexRouteImport
       parentRoute: typeof ModelsRoute
+    }
+    '/channels/': {
+      id: '/channels/'
+      path: '/'
+      fullPath: '/channels/'
+      preLoaderRoute: typeof ChannelsIndexRouteImport
+      parentRoute: typeof ChannelsRoute
     }
     '/agent-teams/': {
       id: '/agent-teams/'
@@ -425,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelsCreateRouteImport
       parentRoute: typeof ModelsRoute
     }
+    '/channels/create': {
+      id: '/channels/create'
+      path: '/create'
+      fullPath: '/channels/create'
+      preLoaderRoute: typeof ChannelsCreateRouteImport
+      parentRoute: typeof ChannelsRoute
+    }
     '/agent-teams/create': {
       id: '/agent-teams/create'
       path: '/agent-teams/create'
@@ -460,6 +528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelsModelIdEditRouteImport
       parentRoute: typeof ModelsRoute
     }
+    '/channels/$channelId/edit': {
+      id: '/channels/$channelId/edit'
+      path: '/$channelId/edit'
+      fullPath: '/channels/$channelId/edit'
+      preLoaderRoute: typeof ChannelsChannelIdEditRouteImport
+      parentRoute: typeof ChannelsRoute
+    }
     '/agent-teams/$agentTeamId/edit': {
       id: '/agent-teams/$agentTeamId/edit'
       path: '/agent-teams/$agentTeamId/edit'
@@ -491,6 +566,22 @@ const AgentConfigsRouteChildren: AgentConfigsRouteChildren = {
 
 const AgentConfigsRouteWithChildren = AgentConfigsRoute._addFileChildren(
   AgentConfigsRouteChildren,
+)
+
+interface ChannelsRouteChildren {
+  ChannelsCreateRoute: typeof ChannelsCreateRoute
+  ChannelsIndexRoute: typeof ChannelsIndexRoute
+  ChannelsChannelIdEditRoute: typeof ChannelsChannelIdEditRoute
+}
+
+const ChannelsRouteChildren: ChannelsRouteChildren = {
+  ChannelsCreateRoute: ChannelsCreateRoute,
+  ChannelsIndexRoute: ChannelsIndexRoute,
+  ChannelsChannelIdEditRoute: ChannelsChannelIdEditRoute,
+}
+
+const ChannelsRouteWithChildren = ChannelsRoute._addFileChildren(
+  ChannelsRouteChildren,
 )
 
 interface ModelsRouteChildren {
@@ -541,6 +632,7 @@ const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentConfigsRoute: AgentConfigsRouteWithChildren,
+  ChannelsRoute: ChannelsRouteWithChildren,
   ChatRoute: ChatRoute,
   ModelsRoute: ModelsRouteWithChildren,
   ProvidersRoute: ProvidersRouteWithChildren,

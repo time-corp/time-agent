@@ -43,6 +43,18 @@ export type {
   ChatTraceSpan,
 } from "./chat-trace";
 export {
+  channelSchema,
+  channelTypeSchema,
+  createChannelSchema,
+  updateChannelSchema,
+} from "./channel"
+export type {
+  Channel,
+  ChannelType,
+  CreateChannelInput,
+  UpdateChannelInput,
+} from "./channel"
+export {
   agentTeamSchema,
   agentTeamMemberSchema,
   createAgentTeamSchema,

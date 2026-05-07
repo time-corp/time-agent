@@ -180,6 +180,24 @@ const createSqliteDatabase = () => {
     );
   `);
 
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS channels (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      type VARCHAR(32) NOT NULL,
+      agent_id VARCHAR(128) REFERENCES agents(id),
+      team_id VARCHAR(128) REFERENCES agent_teams(id),
+      credentials VARCHAR(20000) NOT NULL DEFAULT '{}',
+      options VARCHAR(20000) NOT NULL DEFAULT '{}',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
   const agentColumns = sqlite.query("PRAGMA table_info(agents)").all() as Array<{ name: string }>
   const hasProviderIdColumn = agentColumns.some((column) => column.name === "provider_id")
 

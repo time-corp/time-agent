@@ -13,6 +13,7 @@
     "models": "Mô hình",
     "agentConfigs": "Cấu hình agent",
     "agentTeams": "Nhóm Agent",
+    "channels": "Kênh",
     "realtime": "Realtime",
     "welcomeTitle": "Khung web ưu tiên TanStack",
     "welcomeBody": "Gói web giờ đã có dashboard shell với TanStack Router, shadcn/ui, chuyển theme và chuyển ngôn ngữ.",

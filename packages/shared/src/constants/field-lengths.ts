@@ -22,3 +22,5 @@ export const SKILL_NAME_MAX_LENGTH = 100;
 export const SKILL_KEY_MAX_LENGTH = 64;
 export const SKILL_VERSION_MAX_LENGTH = 20;
 export const SKILL_PATH_MAX_LENGTH = 1024;
+export const CHANNEL_TYPE_MAX_LENGTH = 32;
+export const CHANNEL_NAME_MAX_LENGTH = 100;
