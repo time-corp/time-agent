@@ -35,4 +35,7 @@ packages/api/.artifacts/
 
 # User-uploaded skills
 packages/api/.skills/
+
+# WhatsApp session files (contain auth credentials)
+packages/api/whatsapp-sessions/
 bun.lock

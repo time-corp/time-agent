@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
+    "@hapi/boom": "^10.0.1",
     "@hono/zod-validator": "^0.7.6",
     "@mastra/agent-browser": "^0.2.1",
     "@mastra/core": "^1.32.1",
@@ -27,6 +28,7 @@
     "@mastra/pg": "1.10.0",
     "@slack/bolt": "^4.7.2",
     "@time/shared": "workspace:*",
+    "@whiskeysockets/baileys": "^7.0.0-rc10",
     "discord.js": "^14.26.4",
     "dockerode": "^4.0.10",
     "drizzle-orm": "^0.45.2",

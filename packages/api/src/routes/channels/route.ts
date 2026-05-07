@@ -7,6 +7,7 @@ import {
   listChannels,
   updateChannelById,
 } from "../../services/channel-service"
+import { whatsappBotManager } from "../../services/whatsapp-bot-manager"
 import { createChannelValidator, updateChannelValidator } from "./validator"
 
 export const channelsRoute = new Hono()
@@ -18,4 +19,12 @@ export const channelsRoute = new Hono()
   .patch("/:id", updateChannelValidator, async (c) =>
     ok(c, await updateChannelById(c.req.param("id"), c.req.valid("json"))),
   )
-  .delete("/:id", async (c) => ok(c, await deleteChannelById(c.req.param("id"))))
+  .delete("/:id", async (c) => {
+    const id = c.req.param("id")
+    const channel = await getChannelById(id)
+    const result = await deleteChannelById(id)
+    if (channel.type === "whatsapp") {
+      await whatsappBotManager.deleteChannel(id)
+    }
+    return ok(c, result)
+  })

@@ -1,10 +1,11 @@
-export const channelTypeValues = ["telegram", "discord", "slack", "web", "api"] as const
+export const channelTypeValues = ["telegram", "discord", "slack", "whatsapp", "web", "api"] as const
 export type ChannelTypeValue = (typeof channelTypeValues)[number]
 
 export const channelTypeMeta: Record<ChannelTypeValue, { label: string }> = {
   telegram: { label: "Telegram" },
   discord: { label: "Discord" },
   slack: { label: "Slack" },
+  whatsapp: { label: "WhatsApp" },
   web: { label: "Web" },
   api: { label: "API" },
 }
@@ -19,6 +20,7 @@ export const credentialFields: Record<ChannelTypeValue, Array<{ key: string; lab
     { key: "botToken", label: "Bot Token", placeholder: "xoxb-..." },
     { key: "appToken", label: "App-Level Token", placeholder: "xapp-..." },
   ],
+  whatsapp: [],
   web: [{ key: "webhookSecret", label: "Webhook Secret (optional)", placeholder: "secret..." }],
   api: [{ key: "webhookSecret", label: "Webhook Secret (optional)", placeholder: "secret..." }],
 }

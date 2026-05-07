@@ -10,6 +10,7 @@ import { ChannelForm } from "@/pages/channels/components/channel-form"
 import { TelegramBotControl } from "@/pages/channels/components/telegram-bot-control"
 import { DiscordBotControl } from "@/pages/channels/components/discord-bot-control"
 import { SlackBotControl } from "@/pages/channels/components/slack-bot-control"
+import { WhatsAppBotControl } from "@/pages/channels/components/whatsapp-bot-control"
 import type { ChannelFormValues, ChannelTypeValue } from "@/pages/channels/schemas/channel-schema"
 
 export function ChannelsEditPage() {
@@ -100,6 +101,12 @@ export function ChannelsEditPage() {
       {channel.type === "slack" && (
         <SectionCard title="Bot Control">
           <SlackBotControl channelId={channelId} />
+        </SectionCard>
+      )}
+
+      {channel.type === "whatsapp" && (
+        <SectionCard title="Bot Control">
+          <WhatsAppBotControl channelId={channelId} />
         </SectionCard>
       )}
 

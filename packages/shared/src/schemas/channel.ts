@@ -5,7 +5,7 @@ import {
   CHANNEL_NAME_MAX_LENGTH,
 } from "../constants/field-lengths"
 
-export const channelTypeSchema = z.enum(["telegram", "discord", "slack", "web", "api"])
+export const channelTypeSchema = z.enum(["telegram", "discord", "slack", "whatsapp", "web", "api"])
 
 export const channelSchema = baseEntitySchema.extend({
   id: z.string().min(1).max(ID_MAX_LENGTH),

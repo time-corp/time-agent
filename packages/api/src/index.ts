@@ -10,6 +10,8 @@ import { discordRoute } from "./routes/discord/route"
 import { discordBotManager } from "./services/discord-bot-manager"
 import { slackRoute } from "./routes/slack/route"
 import { slackBotManager } from "./services/slack-bot-manager"
+import { whatsappRoute } from "./routes/whatsapp/route"
+import { whatsappBotManager } from "./services/whatsapp-bot-manager"
 import { agentConfigsRoute } from "./routes/agent-configs/route"
 import { agentTeamsRoute } from "./routes/agent-teams/route"
 import { toolsRoute } from "./routes/tools/route"
@@ -59,11 +61,13 @@ await mastraServer.init();
 app.route(`${apiV1}/telegram`, telegramRoute)
 app.route(`${apiV1}/discord`, discordRoute)
 app.route(`${apiV1}/slack`, slackRoute)
+app.route(`${apiV1}/whatsapp`, whatsappRoute)
 
 // Start all active bots in the background
 void telegramBotManager.init()
 void discordBotManager.init()
 void slackBotManager.init()
+void whatsappBotManager.init()
 
 if (serveWeb) {
   app.get("/assets/*", async (c) => {
