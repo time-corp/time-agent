@@ -6,6 +6,8 @@ import { mastra } from "./mastra";
 import { channelsRoute } from "./routes/channels/route"
 import { telegramRoute } from "./routes/telegram/route"
 import { telegramBotManager } from "./services/telegram-bot-manager"
+import { discordRoute } from "./routes/discord/route"
+import { discordBotManager } from "./services/discord-bot-manager"
 import { agentConfigsRoute } from "./routes/agent-configs/route"
 import { agentTeamsRoute } from "./routes/agent-teams/route"
 import { toolsRoute } from "./routes/tools/route"
@@ -53,9 +55,11 @@ await mastraServer.init();
 
 // Register custom routes AFTER Mastra init to avoid Mastra's wildcard routes shadowing them
 app.route(`${apiV1}/telegram`, telegramRoute)
+app.route(`${apiV1}/discord`, discordRoute)
 
-// Start all active Telegram bots in the background
+// Start all active bots in the background
 void telegramBotManager.init()
+void discordBotManager.init()
 
 if (serveWeb) {
   app.get("/assets/*", async (c) => {

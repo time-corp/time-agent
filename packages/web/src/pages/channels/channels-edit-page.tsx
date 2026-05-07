@@ -8,6 +8,7 @@ import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs"
 import { useAgentTeamsQuery } from "@/hooks/useAgentTeams"
 import { ChannelForm } from "@/pages/channels/components/channel-form"
 import { TelegramBotControl } from "@/pages/channels/components/telegram-bot-control"
+import { DiscordBotControl } from "@/pages/channels/components/discord-bot-control"
 import type { ChannelFormValues, ChannelTypeValue } from "@/pages/channels/schemas/channel-schema"
 
 export function ChannelsEditPage() {
@@ -86,6 +87,12 @@ export function ChannelsEditPage() {
       {channel.type === "telegram" && (
         <SectionCard title="Bot Control">
           <TelegramBotControl channelId={channelId} />
+        </SectionCard>
+      )}
+
+      {channel.type === "discord" && (
+        <SectionCard title="Bot Control">
+          <DiscordBotControl channelId={channelId} />
         </SectionCard>
       )}
 
