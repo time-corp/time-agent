@@ -2,8 +2,11 @@ import { Bot } from "grammy"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
 import { decryptJson } from "../lib/encryption"
+import { createLogger } from "../lib/logger"
 import { createRuntimeAgent } from "../mastra/runtime-agent"
 import { createRuntimeTeam } from "../mastra/runtime-team"
+
+const log = createLogger("telegram-manager")
 
 type BotEntry = {
   bot: Bot
@@ -54,7 +57,7 @@ class TelegramBotManager {
 
     const active = channels.filter((ch) => ch.isActive)
 
-    console.log(`[telegram-manager] init — ${active.length} active telegram channel(s)`)
+    log.info({ count: active.length }, "init active channels")
 
     await Promise.allSettled(active.map((ch) => this.startBot(ch.id)))
   }
@@ -93,12 +96,7 @@ class TelegramBotManager {
       const chatTitle = "title" in ctx.chat ? (ctx.chat.title as string | undefined) : undefined
       const threadTitle = buildThreadTitle(ctx.chat.type, chatTitle, ctx.from?.first_name)
 
-      console.log("[telegram-manager] message", {
-        channelId,
-        chatId,
-        fromId: ctx.from?.id,
-        textPreview: text.slice(0, 100),
-      })
+      log.debug({ channelId, chatId, fromId: ctx.from?.id, textPreview: text.slice(0, 100) }, "message received")
 
       try {
 
@@ -163,13 +161,13 @@ class TelegramBotManager {
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Something went wrong"
-        console.error("[telegram-manager] message.error", { channelId, chatId, err })
+        log.error({ channelId, chatId, err }, "message error")
         await ctx.reply(`[Error] ${msg}`)
       }
     })
 
     bot.catch((err) => {
-      console.error("[telegram-manager] bot.error", { channelId, err: err.message })
+      log.error({ channelId, errMessage: err.message }, "bot error")
     })
 
     // Validate token by calling getMe before committing to start
@@ -177,7 +175,7 @@ class TelegramBotManager {
       await bot.init()
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Invalid bot token"
-      console.error("[telegram-manager] bot.init.error", { channelId, err: msg })
+      log.error({ channelId, errMessage: msg }, "bot init error")
       return { ok: false, error: `Invalid bot token: ${msg}` }
     }
 
@@ -186,11 +184,11 @@ class TelegramBotManager {
       .start({
         drop_pending_updates: true,
         onStart: (info) => {
-          console.log(`[telegram-manager] bot started — @${info.username} (channel: ${channelId})`)
+          log.info({ username: info.username, channelId }, "bot started")
         },
       })
       .catch((err) => {
-        console.error("[telegram-manager] bot.start.fatal", { channelId, err })
+        log.error({ channelId, err }, "bot start fatal")
         this.bots.delete(channelId)
       })
 
@@ -204,7 +202,7 @@ class TelegramBotManager {
 
     await entry.bot.stop()
     this.bots.delete(channelId)
-    console.log(`[telegram-manager] bot stopped — channel: ${channelId}`)
+    log.info({ channelId }, "bot stopped")
     return { ok: true }
   }
 

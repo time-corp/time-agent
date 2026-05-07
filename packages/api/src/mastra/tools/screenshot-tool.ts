@@ -5,6 +5,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { agentBrowser } from "../browser";
 import { ARTIFACT_STORAGE_DIR } from "../../services/sandbox-artifact-service";
+import { createLogger } from "../../lib/logger";
+
+const log = createLogger("screenshot");
 
 const ARTIFACT_BASE_URL =
   process.env["ARTIFACT_BASE_URL"] ?? "http://localhost:3000";
@@ -24,12 +27,7 @@ export const screenshotTool = createTool({
     const runId = randomUUID();
     const fileName = `screenshot-${runId}.png`;
 
-    console.log(
-      "[screenshot] executablePath:",
-      process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"] ?? "(default)",
-    );
-    console.log("[screenshot] artifactDir:", ARTIFACT_STORAGE_DIR);
-    console.log("[screenshot] url:", url);
+    log.debug({ executablePath: process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"] ?? "(default)", artifactDir: ARTIFACT_STORAGE_DIR, url }, "screenshot start");
 
     try {
       await agentBrowser.ensureReady();
@@ -42,12 +40,12 @@ export const screenshotTool = createTool({
       await mkdir(storageDir, { recursive: true });
       await writeFile(resolve(storageDir, fileName), buffer);
 
-      console.log("[screenshot] saved:", resolve(storageDir, fileName));
+      log.info({ path: resolve(storageDir, fileName) }, "screenshot saved");
       return {
         url: `${ARTIFACT_BASE_URL}/api/v1/artifacts/${runId}/${fileName}`,
       };
     } catch (err) {
-      console.error("[screenshot] error:", err);
+      log.error({ err }, "screenshot failed");
       throw err;
     }
   },

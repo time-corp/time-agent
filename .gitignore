@@ -39,3 +39,4 @@ packages/api/.skills/
 # WhatsApp session files (contain auth credentials)
 packages/api/whatsapp-sessions/
 bun.lock
+packages/api/logs/

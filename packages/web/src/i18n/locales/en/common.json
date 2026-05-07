@@ -29,6 +29,7 @@
     "chatStream": "Stream",
     "chatEmpty": "Send a message to start chatting.",
     "chatPlaceholder": "Type a message... (Enter to send, Shift+Enter for new line)",
-    "chatHint": "Enter to send · Shift+Enter for new line"
+    "chatHint": "Enter to send · Shift+Enter for new line",
+    "logs": "Logs"
   }
 }

@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
 import { DEFAULT_ACTOR_ID, DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors"
+import { createLogger } from "../lib/logger"
+
+const log = createLogger("provider-service")
 
 const maskSecret = (value: string | null | undefined) => {
   if (!value) return null
@@ -78,14 +81,7 @@ export const getProviderById = async (id: string) => {
     throw new AppError(ErrorCode.NOT_FOUND, "Provider not found", 404)
   }
 
-  console.log("[provider-service] getProviderById.result", {
-    id: provider.id,
-    name: provider.name,
-    type: provider.type,
-    baseUrl: provider.baseUrl,
-    isActive: provider.isActive,
-    hasApiKey: Boolean(provider.apiKey),
-  })
+  log.debug({ id: provider.id, name: provider.name, type: provider.type, baseUrl: provider.baseUrl, isActive: provider.isActive, hasApiKey: Boolean(provider.apiKey) }, "getProviderById.result")
 
   return toSafeProvider(provider)
 }
@@ -97,29 +93,13 @@ export const listProviderModels = async (id: string) => {
     throw new AppError(ErrorCode.NOT_FOUND, "Provider not found", 404)
   }
 
-  console.log("[provider-service] listProviderModels.input", {
-    providerId: provider.id,
-    providerName: provider.name,
-    providerType: provider.type,
-  })
-
-  console.log("[provider-service] listProviderModels.result", {
-    providerId: provider.id,
-    providerType: provider.type,
-    models: providerModelCatalog[provider.type] ?? [],
-  })
+  log.debug({ providerId: provider.id, providerName: provider.name, providerType: provider.type, models: providerModelCatalog[provider.type] ?? [] }, "listProviderModels")
 
   return providerModelCatalog[provider.type] ?? []
 }
 
 export const createProvider = async (input: CreateProviderInput) => {
-  console.log("[provider-service] createProvider.input", {
-    name: input.name,
-    type: input.type,
-    baseUrl: input.baseUrl ?? null,
-    isActive: input.isActive ?? true,
-    apiKeyPreview: maskSecret(input.apiKey),
-  })
+  log.debug({ name: input.name, type: input.type, baseUrl: input.baseUrl ?? null, isActive: input.isActive ?? true, apiKeyPreview: maskSecret(input.apiKey) }, "createProvider.input")
 
   const [provider] = await db
     .insert(schema.providers)
@@ -140,29 +120,13 @@ export const createProvider = async (input: CreateProviderInput) => {
     throw new AppError(ErrorCode.INTERNAL_ERROR, "Failed to create provider", 500)
   }
 
-  console.log("[provider-service] createProvider.result", {
-    id: provider.id,
-    name: provider.name,
-    type: provider.type,
-    baseUrl: provider.baseUrl,
-    isActive: provider.isActive,
-    hasApiKey: Boolean(provider.apiKey),
-  })
+  log.info({ id: provider.id, name: provider.name, type: provider.type }, "provider created")
 
   return toSafeProvider(provider)
 }
 
 export const updateProviderById = async (id: string, input: UpdateProviderInput) => {
-  console.log("[provider-service] updateProviderById.input", {
-    id,
-    updates: {
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.type !== undefined && { type: input.type }),
-      ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
-      ...(input.isActive !== undefined && { isActive: input.isActive }),
-      ...(input.apiKey !== undefined && { apiKeyPreview: maskSecret(input.apiKey) }),
-    },
-  })
+  log.debug({ id, updates: { ...(input.name !== undefined && { name: input.name }), ...(input.type !== undefined && { type: input.type }), ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }), ...(input.isActive !== undefined && { isActive: input.isActive }), ...(input.apiKey !== undefined && { apiKeyPreview: maskSecret(input.apiKey) }) } }, "updateProviderById.input")
 
   const updates: Record<string, unknown> = {
     updatedAt: new Date(),
@@ -185,14 +149,7 @@ export const updateProviderById = async (id: string, input: UpdateProviderInput)
     throw new AppError(ErrorCode.NOT_FOUND, "Provider not found", 404)
   }
 
-  console.log("[provider-service] updateProviderById.result", {
-    id: provider.id,
-    name: provider.name,
-    type: provider.type,
-    baseUrl: provider.baseUrl,
-    isActive: provider.isActive,
-    hasApiKey: Boolean(provider.apiKey),
-  })
+  log.info({ id: provider.id, name: provider.name, type: provider.type }, "provider updated")
 
   return toSafeProvider(provider)
 }

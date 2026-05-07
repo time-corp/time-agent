@@ -2,10 +2,13 @@ import type { Agent } from "@mastra/core/agent"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
 import { AppError, ErrorCode } from "../lib/errors"
+import { createLogger } from "../lib/logger"
 import { createRuntimeAgent } from "./runtime-agent"
 
+const log = createLogger("runtime-team")
+
 export const createRuntimeTeam = async (teamId: string) => {
-  console.log("[runtime-team] createRuntimeTeam.input", { teamId })
+  log.debug({ teamId }, "createRuntimeTeam.input")
 
   const [team] = await db
     .select()
@@ -26,7 +29,7 @@ export const createRuntimeTeam = async (teamId: string) => {
     .from(schema.agentTeamMembers)
     .where(eq(schema.agentTeamMembers.teamId, teamId))
 
-  console.log("[runtime-team] team", { id: team.id, name: team.name, leadAgentId: team.leadAgentId, memberCount: members.length })
+  log.debug({ id: team.id, name: team.name, leadAgentId: team.leadAgentId, memberCount: members.length }, "team loaded")
 
   // Create all member agents in parallel
   const memberAgentEntries = await Promise.all(
@@ -44,10 +47,7 @@ export const createRuntimeTeam = async (teamId: string) => {
     subAgents,
   )
 
-  console.log("[runtime-team] supervisor ready", {
-    leadAgentId: team.leadAgentId,
-    subAgentIds: Object.keys(subAgents),
-  })
+  log.info({ leadAgentId: team.leadAgentId, subAgentIds: Object.keys(subAgents) }, "supervisor ready")
 
   return { supervisorAgent, modelSettings, team }
 }

@@ -2,9 +2,12 @@ import { Hono } from "hono"
 import { z } from "zod"
 import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
+import { createLogger } from "../../lib/logger"
 import { createRuntimeAgent } from "../../mastra/runtime-agent"
 import { listChatMessages, listChatThreads } from "../../services/chat-history-service"
 import { getChatTrace } from "../../services/chat-trace-service"
+
+const log = createLogger("chat-route")
 
 const chatIdSchema = z.string().trim().min(1).max(512)
 const threadMetadataSchema = z.record(z.string(), z.unknown())
@@ -139,14 +142,7 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
-    console.log("[chat-route] generate.request", {
-      agentConfigId: c.req.param("agentConfigId"),
-      messageCount: parsed.data.messages.length,
-      lastMessage: parsed.data.messages.at(-1)?.content ?? null,
-      threadId: parsed.data.threadId ?? null,
-      resourceId: parsed.data.resourceId ?? null,
-      maxSteps: parsed.data.maxSteps ?? 20,
-    })
+    log.debug({ agentConfigId: c.req.param("agentConfigId"), messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "generate.request")
 
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
     const memory = (await agent.getMemory()) ?? null
@@ -169,15 +165,7 @@ export const chatRoute = new Hono()
       }),
     })
 
-    console.log("[chat-route] generate.result", {
-      agentConfigId: c.req.param("agentConfigId"),
-      textPreview: result.text.slice(0, 300),
-      finishReason: result.finishReason,
-      usage: result.usage,
-      warnings: result.warnings,
-      response: result.response,
-      providerMetadata: result.providerMetadata,
-    })
+    log.debug({ agentConfigId: c.req.param("agentConfigId"), textPreview: result.text.slice(0, 300), finishReason: result.finishReason, usage: result.usage }, "generate.result")
 
     return ok(c, { text: result.text, traceId: result.traceId ?? null })
   })
@@ -188,14 +176,7 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
-    console.log("[chat-route] stream.request", {
-      agentConfigId: c.req.param("agentConfigId"),
-      messageCount: parsed.data.messages.length,
-      lastMessage: parsed.data.messages.at(-1)?.content ?? null,
-      threadId: parsed.data.threadId ?? null,
-      resourceId: parsed.data.resourceId ?? null,
-      maxSteps: parsed.data.maxSteps ?? 20,
-    })
+    log.debug({ agentConfigId: c.req.param("agentConfigId"), messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "stream.request")
 
     const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
     const memory = (await agent.getMemory()) ?? null
@@ -229,21 +210,10 @@ export const chatRoute = new Hono()
       result.text,
     ])
       .then(([finishReason, usage, warnings, response, providerMetadata, text]) => {
-        console.log("[chat-route] stream.result", {
-          agentConfigId: c.req.param("agentConfigId"),
-          textPreview: text.slice(0, 300),
-          finishReason,
-          usage,
-          warnings,
-          response,
-          providerMetadata,
-        })
+        log.debug({ agentConfigId: c.req.param("agentConfigId"), textPreview: text.slice(0, 300), finishReason, usage }, "stream.result")
       })
       .catch((error) => {
-        console.error("[chat-route] stream.result.error", {
-          agentConfigId: c.req.param("agentConfigId"),
-          error,
-        })
+        log.error({ agentConfigId: c.req.param("agentConfigId"), error }, "stream.result.error")
       })
 
     const stream = new ReadableStream<Uint8Array>({

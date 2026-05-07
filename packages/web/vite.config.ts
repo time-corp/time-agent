@@ -11,6 +11,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": resolve(__dirname, "./src"),
       "@time/shared": resolve(__dirname, "../shared/src/index.ts"),

@@ -2,7 +2,10 @@ import type { ChatHistoryMessage, ChatHistoryThread } from "@time/shared"
 import type { MastraDBMessage } from "@mastra/core/agent/message-list"
 import { createAgentMemory } from "../mastra/memory"
 import { AppError, ErrorCode } from "../lib/errors"
+import { createLogger } from "../lib/logger"
 import { attachTraceIdsToMessages } from "./chat-trace-service"
+
+const log = createLogger("team-chat-history")
 import { extractMessageText } from "./mastra-message-service"
 
 const toIsoString = (value: Date | string | null | undefined) => {
@@ -84,15 +87,7 @@ export const listTeamChatMessages = async (
   const memory = createTeamMemory()
   const thread = await memory.getThreadById({ threadId })
 
-  console.log("[team-chat-history] messages.thread-lookup", {
-    teamId,
-    threadId,
-    resourceId,
-    found: Boolean(thread),
-    threadResourceId: thread?.resourceId ?? null,
-    threadMetadata: thread?.metadata ?? null,
-    resourceIdMatch: thread?.resourceId === resourceId,
-  })
+  log.debug({ teamId, threadId, resourceId, found: Boolean(thread), resourceIdMatch: thread?.resourceId === resourceId }, "messages.thread-lookup")
 
   if (!thread || thread.resourceId !== resourceId) {
     throw new AppError(ErrorCode.NOT_FOUND, "Chat thread not found", 404)

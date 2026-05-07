@@ -5,6 +5,9 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 import { DEFAULT_TENANT_ID } from "../lib/entity-context";
 import { AppError, ErrorCode } from "../lib/errors";
+import { createLogger } from "../lib/logger";
+
+const log = createLogger("runtime-agent");
 import { resolveToolsByKeys } from "./tools/registry";
 import { resolveEnabledKeysForAgent } from "../services/tool-service";
 import { resolveAssignedSkillPathsForAgent } from "../services/skill-assignment-service";
@@ -74,7 +77,7 @@ export const createRuntimeAgent = async (
   agentConfigId: string,
   subAgents?: Record<string, Agent>,
 ) => {
-  console.log("[runtime-agent] createRuntimeAgent.input", { agentConfigId });
+  log.debug({ agentConfigId }, "createRuntimeAgent.input");
 
   const [agentConfig] = await db
     .select()
@@ -108,23 +111,8 @@ export const createRuntimeAgent = async (
     throw new AppError(ErrorCode.VALIDATION_ERROR, "Provider is inactive", 422);
   }
 
-  console.log("[runtime-agent] db.agentConfig", {
-    id: agentConfig.id,
-    name: agentConfig.name,
-    providerId: agentConfig.providerId,
-    modelName: agentConfig.modelName,
-    modelSource: agentConfig.modelSource,
-    isActive: agentConfig.isActive,
-  });
-
-  console.log("[runtime-agent] db.provider", {
-    id: provider.id,
-    name: provider.name,
-    type: provider.type,
-    baseUrl: provider.baseUrl,
-    isActive: provider.isActive,
-    hasApiKey: Boolean(provider.apiKey),
-  });
+  log.debug({ id: agentConfig.id, name: agentConfig.name, providerId: agentConfig.providerId, modelName: agentConfig.modelName, modelSource: agentConfig.modelSource, isActive: agentConfig.isActive }, "db.agentConfig");
+  log.debug({ id: provider.id, name: provider.name, type: provider.type, baseUrl: provider.baseUrl, isActive: provider.isActive, hasApiKey: Boolean(provider.apiKey) }, "db.provider");
 
   const memoryConfig = parseJsonConfig(agentConfig.memoryConfig);
 
@@ -140,28 +128,14 @@ export const createRuntimeAgent = async (
   );
   const memory = createAgentMemory(memoryConfig);
 
-  console.log("[runtime-agent] agentConfigId:", agentConfig.id);
-  console.log("[runtime-agent] providerId:", provider.id);
-  console.log(
-    "[runtime-agent] model:",
-    `${provider.type}/${agentConfig.modelName}`,
-  );
-  console.log(
-    "[runtime-agent] resolvedModelConfig:",
-    resolveProviderModel(provider, agentConfig.modelName),
-  );
-  console.log(
-    "[runtime-agent] enabledKeys:",
-    enabledKeys.join(", ") || "(none)",
-  );
-  console.log(
-    "[runtime-agent] runtimeTools:",
-    Object.keys(tools).join(", ") || "(none)",
-  );
-  console.log(
-    "[runtime-agent] instructionsPreview:",
-    instructions.slice(0, 400).replace(/\s+/g, " "),
-  );
+  log.info({
+    agentConfigId: agentConfig.id,
+    providerId: provider.id,
+    model: `${provider.type}/${agentConfig.modelName}`,
+    resolvedModelConfig: resolveProviderModel(provider, agentConfig.modelName),
+    enabledKeys: enabledKeys.join(", ") || "(none)",
+    runtimeTools: Object.keys(tools).join(", ") || "(none)",
+  }, "agent ready");
 
   const agent = new Agent({
     id: `agent-config-${agentConfig.id}`,

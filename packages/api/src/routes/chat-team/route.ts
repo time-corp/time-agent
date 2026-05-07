@@ -2,9 +2,12 @@ import { Hono } from "hono"
 import { z } from "zod"
 import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
+import { createLogger } from "../../lib/logger"
 import { createRuntimeTeam } from "../../mastra/runtime-team"
 import { listTeamChatMessages, listTeamChatThreads } from "../../services/team-chat-history-service"
 import { getChatTrace } from "../../services/chat-trace-service"
+
+const log = createLogger("chat-team-route")
 
 const chatIdSchema = z.string().trim().min(1).max(512)
 const threadMetadataSchema = z.record(z.string(), z.unknown())
@@ -110,15 +113,7 @@ const createSupervisorExecutionOptions = (input: {
       parentAgentName: string
       toolCallId: string
     }) => {
-      console.log("[chat-team-route] delegation.start", {
-        parentAgentId: context.parentAgentId,
-        parentAgentName: context.parentAgentName,
-        primitiveId: context.primitiveId,
-        primitiveType: context.primitiveType,
-        iteration: context.iteration,
-        toolCallId: context.toolCallId,
-        promptPreview: context.prompt.slice(0, 200),
-      })
+      log.debug({ parentAgentId: context.parentAgentId, parentAgentName: context.parentAgentName, primitiveId: context.primitiveId, primitiveType: context.primitiveType, iteration: context.iteration, toolCallId: context.toolCallId, promptPreview: context.prompt.slice(0, 200) }, "delegation.start")
     },
     onDelegationComplete: (context: {
       primitiveId: string
@@ -129,15 +124,7 @@ const createSupervisorExecutionOptions = (input: {
       iteration: number
       result: { text: string }
     }) => {
-      console.log("[chat-team-route] delegation.complete", {
-        primitiveId: context.primitiveId,
-        primitiveType: context.primitiveType,
-        iteration: context.iteration,
-        duration: context.duration,
-        success: context.success,
-        error: context.error?.message,
-        resultPreview: context.result.text.slice(0, 200),
-      })
+      log.debug({ primitiveId: context.primitiveId, primitiveType: context.primitiveType, iteration: context.iteration, duration: context.duration, success: context.success, errMessage: context.error?.message }, "delegation.complete")
     },
   },
   ...(input.threadId && input.resourceId
@@ -152,13 +139,13 @@ export const chatTeamRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, parsed.error.issues.map((i) => i.message).join(", "), 400)
     }
     const teamId = c.req.param("teamId")
-    console.log("[chat-team-route] threads.request", { teamId, resourceId: parsed.data.resourceId })
+    log.debug({ teamId, resourceId: parsed.data.resourceId }, "threads.request")
     try {
       const result = await listTeamChatThreads(teamId, parsed.data.resourceId)
-      console.log("[chat-team-route] threads.result", { teamId, count: result.length })
+      log.debug({ teamId, count: result.length }, "threads.result")
       return ok(c, result)
     } catch (err) {
-      console.error("[chat-team-route] threads.error", err)
+      log.error({ err }, "threads.error")
       throw err
     }
   })
@@ -170,13 +157,13 @@ export const chatTeamRoute = new Hono()
     const teamId = c.req.param("teamId")
     const threadId = c.req.param("threadId")
     const resourceId = parsed.data.resourceId
-    console.log("[chat-team-route] messages.request", { teamId, threadId, resourceId })
+    log.debug({ teamId, threadId, resourceId }, "messages.request")
     try {
       const result = await listTeamChatMessages(teamId, threadId, resourceId)
-      console.log("[chat-team-route] messages.result", { teamId, threadId, count: result.length })
+      log.debug({ teamId, threadId, count: result.length }, "messages.result")
       return ok(c, result)
     } catch (err) {
-      console.error("[chat-team-route] messages.error", err)
+      log.error({ err }, "messages.error")
       throw err
     }
   })
@@ -202,17 +189,11 @@ export const chatTeamRoute = new Hono()
     }
 
     const teamId = c.req.param("teamId")
-    console.log("[chat-team-route] generate.request", {
-      teamId,
-      lastMessage: parsed.data.messages.at(-1)?.content ?? null,
-      threadId: parsed.data.threadId ?? null,
-      resourceId: parsed.data.resourceId ?? null,
-      maxSteps: parsed.data.maxSteps ?? 20,
-    })
+    log.debug({ teamId, messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "generate.request")
 
     const { supervisorAgent, modelSettings } = await createRuntimeTeam(teamId)
     const memory = (await supervisorAgent.getMemory()) ?? null
-    console.log("[chat-team-route] generate.memory", { hasMemory: Boolean(memory) })
+    log.debug({ hasMemory: Boolean(memory) }, "generate.memory")
 
     await ensureThreadExists({
       memory,
@@ -221,13 +202,10 @@ export const chatTeamRoute = new Hono()
       ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
       ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
     })
-    console.log("[chat-team-route] generate.thread-ready")
+    log.debug("generate.thread-ready")
 
     const requestMessages = parsed.data.messages
-    console.log("[chat-team-route] generate.calling-supervisor", {
-      messageCount: requestMessages.length,
-      lastMessageLength: requestMessages.at(-1)?.content.length ?? 0,
-    })
+    log.debug({ messageCount: requestMessages.length }, "generate.calling-supervisor")
 
     try {
       const result = await supervisorAgent.generate(requestMessages, {
@@ -240,10 +218,10 @@ export const chatTeamRoute = new Hono()
         }),
       })
       const text = result.text
-      console.log("[chat-team-route] generate.result", { teamId, textLength: text.length, textPreview: text.slice(0, 200) })
+      log.debug({ teamId, textLength: text.length, textPreview: text.slice(0, 200) }, "generate.result")
       return ok(c, { text, traceId: result.traceId ?? null })
     } catch (err) {
-      console.error("[chat-team-route] generate.error", err)
+      log.error({ err }, "generate.error")
       throw err
     }
   })
@@ -254,17 +232,11 @@ export const chatTeamRoute = new Hono()
     }
 
     const teamId = c.req.param("teamId")
-    console.log("[chat-team-route] stream.request", {
-      teamId,
-      lastMessage: parsed.data.messages.at(-1)?.content ?? null,
-      threadId: parsed.data.threadId ?? null,
-      resourceId: parsed.data.resourceId ?? null,
-      maxSteps: parsed.data.maxSteps ?? 20,
-    })
+    log.debug({ teamId, messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "stream.request")
 
     const { supervisorAgent, modelSettings } = await createRuntimeTeam(teamId)
     const memory = (await supervisorAgent.getMemory()) ?? null
-    console.log("[chat-team-route] stream.memory", { hasMemory: Boolean(memory) })
+    log.debug({ hasMemory: Boolean(memory) }, "stream.memory")
 
     await ensureThreadExists({
       memory,
@@ -273,13 +245,10 @@ export const chatTeamRoute = new Hono()
       ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
       ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
     })
-    console.log("[chat-team-route] stream.thread-ready")
+    log.debug("stream.thread-ready")
 
     const requestMessages = parsed.data.messages
-    console.log("[chat-team-route] stream.calling-supervisor", {
-      messageCount: requestMessages.length,
-      lastMessageLength: requestMessages.at(-1)?.content.length ?? 0,
-    })
+    log.debug({ messageCount: requestMessages.length }, "stream.calling-supervisor")
 
     let result: Awaited<ReturnType<typeof supervisorAgent.stream>>
     try {
@@ -292,9 +261,9 @@ export const chatTeamRoute = new Hono()
           ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
         }),
       })
-      console.log("[chat-team-route] stream.supervisor-started")
+      log.debug("stream.supervisor-started")
     } catch (err) {
-      console.error("[chat-team-route] stream.supervisor-error", err)
+      log.error({ err }, "stream.supervisor-error")
       throw err
     }
 
@@ -308,7 +277,7 @@ export const chatTeamRoute = new Hono()
           while (true) {
             const { done, value } = await fullReader.read()
             if (done) {
-              console.log("[chat-team-route] stream.done", { textChunkCount })
+              log.debug({ textChunkCount }, "stream.done")
               controller.close()
               return
             }
@@ -328,10 +297,7 @@ export const chatTeamRoute = new Hono()
               }
 
               textChunkCount++
-              console.log("[chat-team-route] stream.text-chunk", {
-                textChunkCount,
-                chunkLength: text.length,
-              })
+              log.debug({ textChunkCount, chunkLength: text.length }, "stream.text-chunk")
               controller.enqueue(encoder.encode(text))
               return
             }
@@ -344,7 +310,7 @@ export const chatTeamRoute = new Hono()
                   : chunkError?.message ?? "Agent stream failed"
               const displayMessage = `[Error] ${errorMessage}`
 
-              console.error("[chat-team-route] stream.model-error", { errorMessage })
+              log.error({ errorMessage }, "stream.model-error")
               await saveAssistantErrorMessage({
                 memory,
                 ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
@@ -358,7 +324,7 @@ export const chatTeamRoute = new Hono()
           }
         }
         catch (error) {
-          console.error("[chat-team-route] stream.pull-error", error)
+          log.error({ error }, "stream.pull-error")
           const errorMessage = error instanceof Error ? error.message : "Agent stream failed"
           const displayMessage = `[Error] ${errorMessage}`
           await saveAssistantErrorMessage({
@@ -372,7 +338,7 @@ export const chatTeamRoute = new Hono()
         }
       },
       async cancel(reason) {
-        console.log("[chat-team-route] stream.cancelled", { reason })
+        log.debug({ reason }, "stream.cancelled")
         await fullReader.cancel(reason)
       },
     })

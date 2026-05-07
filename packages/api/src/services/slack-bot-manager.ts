@@ -2,8 +2,11 @@ import { App } from "@slack/bolt"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
 import { decryptJson } from "../lib/encryption"
+import { createLogger } from "../lib/logger"
 import { createRuntimeAgent } from "../mastra/runtime-agent"
 import { createRuntimeTeam } from "../mastra/runtime-team"
+
+const log = createLogger("slack-manager")
 
 type AppEntry = {
   app: App
@@ -58,7 +61,7 @@ class SlackBotManager {
 
     const active = channels.filter((ch) => ch.isActive)
 
-    console.log(`[slack-manager] init — ${active.length} active slack channel(s)`)
+    log.info({ count: active.length }, 'init active channels')
 
     await Promise.allSettled(active.map((ch) => this.startBot(ch.id)))
   }
@@ -103,12 +106,7 @@ class SlackBotManager {
       const resourceId = buildResourceId(slackChannelId)
       const threadTitle = `Slack / ${slackChannelId}`
 
-      console.log("[slack-manager] message", {
-        channelId,
-        slackChannelId,
-        userId: "user" in message ? message.user : undefined,
-        textPreview: text.slice(0, 100),
-      })
+      log.debug({ channelId, slackChannelId, userId: "user" in message ? message.user : undefined, textPreview: text.slice(0, 100) }, "message received")
 
       try {
         const metadata: Record<string, unknown> = {
@@ -171,7 +169,7 @@ class SlackBotManager {
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Something went wrong"
-        console.error("[slack-manager] message.error", { channelId, slackChannelId, err })
+        log.error({ channelId, slackChannelId, err }, 'message error')
         await say(`[Error] ${msg}`)
       }
     })
@@ -179,10 +177,10 @@ class SlackBotManager {
     // Validate credentials by starting the app
     try {
       await app.start()
-      console.log(`[slack-manager] bot started — channel: ${channelId}`)
+      log.info({ channelId }, 'bot started')
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start"
-      console.error("[slack-manager] app.start.error", { channelId, err: msg })
+      log.error({ channelId, errMessage: msg }, 'app start error')
       return { ok: false, error: `Failed to start: ${msg}` }
     }
 
@@ -196,7 +194,7 @@ class SlackBotManager {
 
     await entry.app.stop()
     this.apps.delete(channelId)
-    console.log(`[slack-manager] bot stopped — channel: ${channelId}`)
+    log.info({ channelId }, 'bot stopped')
     return { ok: true }
   }
 

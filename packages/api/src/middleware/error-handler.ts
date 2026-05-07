@@ -2,7 +2,10 @@ import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { AppError, ErrorCode } from "../lib/errors"
+import { createLogger } from "../lib/logger"
 import { fail } from "../lib/response"
+
+const log = createLogger("error-handler")
 
 function mapDbError(cause: unknown): AppError | null {
   const c = cause as Record<string, unknown> | null
@@ -45,7 +48,7 @@ export function errorHandler(err: Error, c: Context) {
     return fail(c, mapped.code, mapped.message, mapped.status as ContentfulStatusCode)
   }
 
-  console.error("[unhandled]", err)
+  log.error({ err }, "unhandled error")
   return fail(c, ErrorCode.INTERNAL_ERROR, "Internal server error", 500)
 }
 

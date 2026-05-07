@@ -2,8 +2,11 @@ import { Client, GatewayIntentBits, Partials } from "discord.js"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
 import { decryptJson } from "../lib/encryption"
+import { createLogger } from "../lib/logger"
 import { createRuntimeAgent } from "../mastra/runtime-agent"
 import { createRuntimeTeam } from "../mastra/runtime-team"
+
+const log = createLogger("discord-manager")
 
 type ClientEntry = {
   client: Client
@@ -58,7 +61,7 @@ class DiscordBotManager {
 
     const active = channels.filter((ch) => ch.isActive)
 
-    console.log(`[discord-manager] init — ${active.length} active discord channel(s)`)
+    log.info({ count: active.length }, "init active channels")
 
     await Promise.allSettled(active.map((ch) => this.startBot(ch.id)))
   }
@@ -106,12 +109,7 @@ class DiscordBotManager {
         ? `${message.guild.name} / #${(message.channel as { name?: string }).name ?? discordChannelId}`
         : `DM / ${message.author.username}`
 
-      console.log("[discord-manager] message", {
-        channelId,
-        discordChannelId,
-        authorId: message.author.id,
-        textPreview: text.slice(0, 100),
-      })
+      log.debug({ channelId, discordChannelId, authorId: message.author.id, textPreview: text.slice(0, 100) }, "message received")
 
       try {
         await message.channel.sendTyping()
@@ -177,13 +175,13 @@ class DiscordBotManager {
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Something went wrong"
-        console.error("[discord-manager] message.error", { channelId, discordChannelId, err })
+        log.error({ channelId, discordChannelId, err }, "message error")
         await message.reply(`[Error] ${msg}`)
       }
     })
 
     client.on("error", (err) => {
-      console.error("[discord-manager] client.error", { channelId, err: err.message })
+      log.error({ channelId, errMessage: err.message }, "client error")
     })
 
     // Validate token before committing
@@ -191,12 +189,12 @@ class DiscordBotManager {
       await client.login(botToken)
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Invalid bot token"
-      console.error("[discord-manager] client.login.error", { channelId, err: msg })
+      log.error({ channelId, errMessage: msg }, "client login error")
       return { ok: false, error: `Invalid bot token: ${msg}` }
     }
 
-    client.once("ready", (readyClient) => {
-      console.log(`[discord-manager] bot ready — @${readyClient.user.tag} (channel: ${channelId})`)
+    client.once("clientReady", (readyClient) => {
+      log.info({ tag: readyClient.user.tag, channelId }, "bot ready")
     })
 
     this.clients.set(channelId, { client, channelId, channelName: channel.name })
@@ -209,7 +207,7 @@ class DiscordBotManager {
 
     entry.client.destroy()
     this.clients.delete(channelId)
-    console.log(`[discord-manager] bot stopped — channel: ${channelId}`)
+    log.info({ channelId }, "bot stopped")
     return { ok: true }
   }
 

@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
 import { DEFAULT_ACTOR_ID, DEFAULT_TENANT_ID } from "../lib/entity-context"
 import { AppError, ErrorCode } from "../lib/errors"
+import { createLogger } from "../lib/logger"
+
+const log = createLogger("agent-config-service")
 
 const parseJsonConfig = (value: string) => {
   try {
@@ -31,28 +34,13 @@ export const getAgentConfigById = async (id: string) => {
     throw new AppError(ErrorCode.NOT_FOUND, "Agent config not found", 404)
   }
 
-  console.log("[agent-config-service] getAgentConfigById.result", {
-    id: agent.id,
-    name: agent.name,
-    providerId: agent.providerId,
-    modelName: agent.modelName,
-    modelSource: agent.modelSource,
-    isActive: agent.isActive,
-  })
+  log.debug({ id: agent.id, name: agent.name, providerId: agent.providerId, modelName: agent.modelName, isActive: agent.isActive }, "getAgentConfigById.result")
 
   return toPublicAgentConfig(agent)
 }
 
 export const createAgentConfig = async (input: CreateAgentConfigInput) => {
-  console.log("[agent-config-service] createAgentConfig.input", {
-    name: input.name,
-    providerId: input.providerId,
-    modelName: input.modelName,
-    modelSource: input.modelSource ?? "catalog",
-    temperature: input.temperature ?? 0.7,
-    maxTokens: input.maxTokens ?? 4096,
-    isActive: input.isActive ?? true,
-  })
+  log.debug({ name: input.name, providerId: input.providerId, modelName: input.modelName }, "createAgentConfig.input")
 
   const [agent] = await db
     .insert(schema.agents)
@@ -79,32 +67,13 @@ export const createAgentConfig = async (input: CreateAgentConfigInput) => {
     throw new AppError(ErrorCode.INTERNAL_ERROR, "Failed to create agent config", 500)
   }
 
-  console.log("[agent-config-service] createAgentConfig.result", {
-    id: agent.id,
-    name: agent.name,
-    providerId: agent.providerId,
-    modelName: agent.modelName,
-    modelSource: agent.modelSource,
-    isActive: agent.isActive,
-  })
+  log.info({ id: agent.id, name: agent.name, providerId: agent.providerId }, "agent config created")
 
   return toPublicAgentConfig(agent)
 }
 
 export const updateAgentConfigById = async (id: string, input: UpdateAgentConfigInput) => {
-  console.log("[agent-config-service] updateAgentConfigById.input", {
-    id,
-    updates: {
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.description !== undefined && { description: input.description }),
-      ...(input.providerId !== undefined && { providerId: input.providerId }),
-      ...(input.modelName !== undefined && { modelName: input.modelName }),
-      ...(input.modelSource !== undefined && { modelSource: input.modelSource }),
-      ...(input.temperature !== undefined && { temperature: input.temperature }),
-      ...(input.maxTokens !== undefined && { maxTokens: input.maxTokens }),
-      ...(input.isActive !== undefined && { isActive: input.isActive }),
-    },
-  })
+  log.debug({ id }, "updateAgentConfigById.input")
 
   const updates: Record<string, unknown> = {
     updatedAt: new Date(),
@@ -129,14 +98,7 @@ export const updateAgentConfigById = async (id: string, input: UpdateAgentConfig
     throw new AppError(ErrorCode.NOT_FOUND, "Agent config not found", 404)
   }
 
-  console.log("[agent-config-service] updateAgentConfigById.result", {
-    id: agent.id,
-    name: agent.name,
-    providerId: agent.providerId,
-    modelName: agent.modelName,
-    modelSource: agent.modelSource,
-    isActive: agent.isActive,
-  })
+  log.info({ id: agent.id, name: agent.name }, "agent config updated")
 
   return toPublicAgentConfig(agent)
 }

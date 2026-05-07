@@ -16,6 +16,7 @@ import { agentConfigsRoute } from "./routes/agent-configs/route"
 import { agentTeamsRoute } from "./routes/agent-teams/route"
 import { toolsRoute } from "./routes/tools/route"
 import { artifactsRoute } from "./routes/artifacts";
+import { logsRoute } from "./routes/logs/route"
 import { chatRoute } from "./routes/chat/route"
 import { chatTeamRoute } from "./routes/chat-team/route"
 import { healthRoute } from "./routes/health";
@@ -45,6 +46,7 @@ const app = new Hono<{ Bindings: HonoBindings; Variables: HonoVariables }>()
   .route(`${apiV1}/chat`, chatRoute)
   .route(`${apiV1}/chat-team`, chatTeamRoute)
   .route(`${apiV1}/artifacts`, artifactsRoute)
+  .route(`${apiV1}/logs`, logsRoute)
   .route(`${apiV1}/channels`, channelsRoute)
   .onError(errorHandler)
   .notFound(notFoundHandler);

@@ -1,7 +1,10 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import { basename, dirname, resolve } from "node:path"
 import tar from "tar-stream"
+import { createLogger } from "../lib/logger"
 import { getSandboxContainer } from "./sandbox-exec-service"
+
+const log = createLogger("skill-trace")
 
 export type StoredArtifact = {
   runId: string
@@ -65,12 +68,7 @@ async function extractSingleFile(stream: NodeJS.ReadableStream): Promise<{ name:
 }
 
 export async function copyArtifactFromSandbox(runId: string, sandboxPath: string, containerName?: string): Promise<StoredArtifact> {
-  console.info("[skill-trace]", JSON.stringify({
-    runId,
-    step: "artifact.copy.start",
-    sandboxPath,
-    containerName,
-  }))
+  log.info({ runId, sandboxPath, containerName }, "artifact.copy.start")
   const { container } = await getSandboxContainer(containerName)
   const archiveStream = await container.getArchive({ path: sandboxPath })
   const extracted = await extractSingleFile(archiveStream)
@@ -79,14 +77,7 @@ export async function copyArtifactFromSandbox(runId: string, sandboxPath: string
 
   await mkdir(dirname(storagePath), { recursive: true })
   await writeFile(storagePath, extracted.content)
-  console.info("[skill-trace]", JSON.stringify({
-    runId,
-    step: "artifact.copy.finish",
-    sandboxPath,
-    storagePath,
-    fileName: extracted.name,
-    bytes: extracted.content.byteLength,
-  }))
+  log.info({ runId, sandboxPath, storagePath, fileName: extracted.name, bytes: extracted.content.byteLength }, "artifact.copy.finish")
 
   return {
     runId,

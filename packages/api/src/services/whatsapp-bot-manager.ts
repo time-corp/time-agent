@@ -7,8 +7,11 @@ import { Boom } from "@hapi/boom"
 import { mkdirSync, rmSync } from "node:fs"
 import { eq } from "drizzle-orm"
 import { db, schema } from "../db"
+import { createLogger } from "../lib/logger"
 import { createRuntimeAgent } from "../mastra/runtime-agent"
 import { createRuntimeTeam } from "../mastra/runtime-team"
+
+const log = createLogger("whatsapp-manager")
 
 type SocketEntry = {
   sock: WASocket
@@ -78,7 +81,7 @@ class WhatsAppBotManager {
 
     const active = channels.filter((ch) => ch.isActive)
 
-    console.log(`[whatsapp-manager] init — ${active.length} active whatsapp channel(s)`)
+    log.info({ count: active.length }, "init active channels")
 
     await Promise.allSettled(active.map((ch) => this.startBot(ch.id)))
   }
@@ -115,12 +118,12 @@ class WhatsAppBotManager {
 
       if (qr) {
         this.qrCodes.set(channelId, qr)
-        console.log(`[whatsapp-manager] QR ready — channel: ${channelId}`)
+        log.info({ channelId }, "QR ready")
       }
 
       if (connection === "open") {
         this.qrCodes.delete(channelId)
-        console.log(`[whatsapp-manager] connected — channel: ${channelId}`)
+        log.info({ channelId }, "connected")
       }
 
       if (connection === "close") {
@@ -136,10 +139,10 @@ class WhatsAppBotManager {
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut
 
         if (shouldReconnect) {
-          console.log(`[whatsapp-manager] reconnecting — channel: ${channelId}`)
+          log.info({ channelId }, "reconnecting")
           await this.startBot(channelId)
         } else {
-          console.log(`[whatsapp-manager] logged out — channel: ${channelId}`)
+          log.info({ channelId }, "logged out")
         }
       }
     })
@@ -159,11 +162,7 @@ class WhatsAppBotManager {
         const resourceId = buildResourceId(jid)
         const threadTitle = `WhatsApp / ${jid.split("@")[0]}`
 
-        console.log("[whatsapp-manager] message", {
-          channelId,
-          jid,
-          textPreview: text.slice(0, 100),
-        })
+        log.debug({ channelId, jid, textPreview: text.slice(0, 100) }, "message received")
 
         try {
           const metadata: Record<string, unknown> = {
@@ -226,7 +225,7 @@ class WhatsAppBotManager {
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Something went wrong"
-          console.error("[whatsapp-manager] message.error", { channelId, jid, err })
+          log.error({ channelId, jid, err }, "message error")
           await sock.sendMessage(jid, { text: `[Error] ${msg}` })
         }
       }
@@ -244,7 +243,7 @@ class WhatsAppBotManager {
     entry.sock.end(undefined)
     this.sockets.delete(channelId)
     this.qrCodes.delete(channelId)
-    console.log(`[whatsapp-manager] bot stopped — channel: ${channelId}`)
+    log.info({ channelId }, "bot stopped")
     return { ok: true }
   }
 
@@ -256,7 +255,7 @@ class WhatsAppBotManager {
     await entry.sock.logout()
     this.sockets.delete(channelId)
     this.qrCodes.delete(channelId)
-    console.log(`[whatsapp-manager] bot logged out — channel: ${channelId}`)
+    log.info({ channelId }, "bot logged out")
     return { ok: true }
   }
 
@@ -288,9 +287,9 @@ class WhatsAppBotManager {
     const authDir = `${AUTH_DIR}/${channelId}`
     try {
       rmSync(authDir, { recursive: true, force: true })
-      console.log(`[whatsapp-manager] session deleted — channel: ${channelId}`)
+      log.info({ channelId }, "session deleted")
     } catch (err) {
-      console.warn(`[whatsapp-manager] failed to delete session dir`, { channelId, err })
+      log.warn({ channelId, err }, "failed to delete session dir")
     }
   }
 
