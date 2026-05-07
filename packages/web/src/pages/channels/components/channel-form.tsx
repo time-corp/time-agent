@@ -1,29 +1,39 @@
-import { useEffect, useState } from "react"
-import { useForm, Controller, useWatch } from "react-hook-form"
-import { ControlledField } from "@/components/form/controlled-field"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { NativeSelect } from "@/components/ui/native-select"
-import type { AgentConfig } from "@/hooks/useAgentConfigs"
-import type { AgentTeam } from "@/hooks/useAgentTeams"
+import { useEffect, useState } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { ControlledField } from "@/components/form/controlled-field";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { NativeSelect } from "@/components/ui/native-select";
+import { ChannelTypeIcon } from "@/pages/channels/components/channel-type-label";
+import type { AgentConfig } from "@/hooks/useAgentConfigs";
+import type { AgentTeam } from "@/hooks/useAgentTeams";
 import {
   channelTypeValues,
   channelTypeMeta,
   credentialFields,
   type ChannelFormValues,
   type ChannelTypeValue,
-} from "@/pages/channels/schemas/channel-schema"
+} from "@/pages/channels/schemas/channel-schema";
 
 type ChannelFormProps = {
-  mode: "create" | "update"
-  agents: AgentConfig[]
-  teams: AgentTeam[]
-  initialValues?: Partial<ChannelFormValues> | undefined
-  pending?: boolean
-  showSaveAndContinue?: boolean
-  onSubmit: (values: ChannelFormValues, action: "save" | "saveAndContinue") => void
-}
+  mode: "create" | "update";
+  agents: AgentConfig[];
+  teams: AgentTeam[];
+  initialValues?: Partial<ChannelFormValues> | undefined;
+  pending?: boolean;
+  showSaveAndContinue?: boolean;
+  onSubmit: (
+    values: ChannelFormValues,
+    action: "save" | "saveAndContinue",
+  ) => void;
+};
 
 const emptyValues: ChannelFormValues = {
   name: "",
@@ -34,7 +44,7 @@ const emptyValues: ChannelFormValues = {
   credentials: {},
   options: {},
   isActive: true,
-}
+};
 
 export function ChannelForm({
   mode,
@@ -47,26 +57,34 @@ export function ChannelForm({
 }: ChannelFormProps) {
   const form = useForm<ChannelFormValues>({
     defaultValues: { ...emptyValues, ...initialValues },
-  })
+  });
 
   useEffect(() => {
-    form.reset({ ...emptyValues, ...initialValues })
-  }, [form, initialValues])
+    form.reset({ ...emptyValues, ...initialValues });
+  }, [form, initialValues]);
 
-  const channelType = useWatch({ control: form.control, name: "type" }) as ChannelTypeValue
-  const targetType = useWatch({ control: form.control, name: "targetType" })
+  const channelType = useWatch({
+    control: form.control,
+    name: "type",
+  }) as ChannelTypeValue;
+  const targetType = useWatch({ control: form.control, name: "targetType" });
 
-  const fields = credentialFields[channelType] ?? []
+  const fields = credentialFields[channelType] ?? [];
 
-  const handleSave = form.handleSubmit((values) => onSubmit(values, "save"))
+  const handleSave = form.handleSubmit((values) => onSubmit(values, "save"));
   const handleSaveAndContinue = form.handleSubmit((values) =>
     onSubmit(values, "saveAndContinue"),
-  )
+  );
 
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSave}>
       <FieldGroup>
-        <ControlledField name="name" control={form.control} label="Name" placeholder="My Telegram Bot" />
+        <ControlledField
+          name="name"
+          control={form.control}
+          label="Name"
+          placeholder="My Telegram Bot"
+        />
 
         {/* Channel type */}
         <Controller
@@ -74,23 +92,22 @@ export function ChannelForm({
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="channel-type">Channel Type</FieldLabel>
-              <NativeSelect
-                id="channel-type"
+              <FieldLabel>Channel Type</FieldLabel>
+              <Combobox
+                options={channelTypeValues.map((t) => ({
+                  value: t,
+                  label: channelTypeMeta[t].label,
+                  icon: <ChannelTypeIcon type={t} size={24} />,
+                }))}
                 value={field.value}
-                disabled={pending || mode === "update"}
-                aria-invalid={fieldState.invalid}
-                onChange={(e) => {
-                  field.onChange(e.target.value)
-                  form.setValue("credentials", {})
+                onChange={(val) => {
+                  field.onChange(val);
+                  form.setValue("credentials", {});
                 }}
-              >
-                {channelTypeValues.map((t) => (
-                  <option key={t} value={t}>
-                    {channelTypeMeta[t].label}
-                  </option>
-                ))}
-              </NativeSelect>
+                placeholder="Select channel type..."
+                searchPlaceholder="Search type..."
+                disabled={pending || mode === "update"}
+              />
               <FieldError />
             </Field>
           )}
@@ -98,7 +115,12 @@ export function ChannelForm({
 
         {/* Target: agent or team */}
         <Field>
-          <FieldLabel>Target <span className="text-muted-foreground font-normal">(optional)</span></FieldLabel>
+          <FieldLabel>
+            Target{" "}
+            <span className="text-muted-foreground font-normal">
+              (optional)
+            </span>
+          </FieldLabel>
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
               <Controller
@@ -111,9 +133,9 @@ export function ChannelForm({
                       size="sm"
                       variant={field.value === "none" ? "secondary" : "outline"}
                       onClick={() => {
-                        field.onChange("none")
-                        form.setValue("agentId", null)
-                        form.setValue("teamId", null)
+                        field.onChange("none");
+                        form.setValue("agentId", null);
+                        form.setValue("teamId", null);
                       }}
                     >
                       None
@@ -121,10 +143,12 @@ export function ChannelForm({
                     <Button
                       type="button"
                       size="sm"
-                      variant={field.value === "agent" ? "secondary" : "outline"}
+                      variant={
+                        field.value === "agent" ? "secondary" : "outline"
+                      }
                       onClick={() => {
-                        field.onChange("agent")
-                        form.setValue("teamId", null)
+                        field.onChange("agent");
+                        form.setValue("teamId", null);
                       }}
                     >
                       Agent
@@ -134,8 +158,8 @@ export function ChannelForm({
                       size="sm"
                       variant={field.value === "team" ? "secondary" : "outline"}
                       onClick={() => {
-                        field.onChange("team")
-                        form.setValue("agentId", null)
+                        field.onChange("team");
+                        form.setValue("agentId", null);
                       }}
                     >
                       Team
@@ -158,7 +182,9 @@ export function ChannelForm({
                       onChange={(e) => field.onChange(e.target.value || null)}
                     >
                       <option value="">
-                        {agents.length === 0 ? "No agents available" : "Select agent"}
+                        {agents.length === 0
+                          ? "No agents available"
+                          : "Select agent"}
                       </option>
                       {agents.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -184,7 +210,9 @@ export function ChannelForm({
                       onChange={(e) => field.onChange(e.target.value || null)}
                     >
                       <option value="">
-                        {teams.length === 0 ? "No teams available" : "Select team"}
+                        {teams.length === 0
+                          ? "No teams available"
+                          : "Select team"}
                       </option>
                       {teams.map((t) => (
                         <option key={t.id} value={t.id}>
@@ -247,7 +275,9 @@ export function ChannelForm({
                 <Checkbox
                   id="channel-is-active"
                   checked={field.value}
-                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                  onCheckedChange={(checked) =>
+                    field.onChange(checked === true)
+                  }
                   disabled={pending}
                 />
                 <FieldLabel htmlFor="channel-is-active">Active</FieldLabel>
@@ -273,5 +303,5 @@ export function ChannelForm({
         )}
       </div>
     </form>
-  )
+  );
 }

@@ -8,7 +8,7 @@ import type { Channel } from "@/hooks/useChannels"
 import type { AgentConfig } from "@/hooks/useAgentConfigs"
 import type { AgentTeam } from "@/hooks/useAgentTeams"
 import type { TelegramBotStatus } from "@/hooks/useTelegramBot"
-import { channelTypeMeta } from "@/pages/channels/schemas/channel-schema"
+import { ChannelTypeLabel } from "@/pages/channels/components/channel-type-label"
 
 export function getChannelColumns({
   sorting,
@@ -69,11 +69,7 @@ export function getChannelColumns({
     {
       id: "type",
       header: "Type",
-      cell: ({ row }) => (
-        <Badge variant="outline">
-          {channelTypeMeta[row.original.type as keyof typeof channelTypeMeta]?.label ?? row.original.type}
-        </Badge>
-      ),
+      cell: ({ row }) => <ChannelTypeLabel type={row.original.type} />,
     },
     {
       id: "target",
