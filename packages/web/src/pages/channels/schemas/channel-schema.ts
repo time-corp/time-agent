@@ -17,7 +17,7 @@ export const credentialFields: Record<ChannelTypeValue, Array<{ key: string; lab
   ],
   slack: [
     { key: "botToken", label: "Bot Token", placeholder: "xoxb-..." },
-    { key: "signingSecret", label: "Signing Secret", placeholder: "abc123..." },
+    { key: "appToken", label: "App-Level Token", placeholder: "xapp-..." },
   ],
   web: [{ key: "webhookSecret", label: "Webhook Secret (optional)", placeholder: "secret..." }],
   api: [{ key: "webhookSecret", label: "Webhook Secret (optional)", placeholder: "secret..." }],

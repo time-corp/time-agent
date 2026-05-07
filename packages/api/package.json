@@ -25,6 +25,7 @@
     "@mastra/memory": "1.17.5",
     "@mastra/observability": "^1.11.1",
     "@mastra/pg": "1.10.0",
+    "@slack/bolt": "^4.7.2",
     "@time/shared": "workspace:*",
     "discord.js": "^14.26.4",
     "dockerode": "^4.0.10",
