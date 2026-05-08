@@ -1,17 +1,18 @@
+import type { Icon, IconWeight } from "@solar-icons/react/lib/types";
 import type { ComponentType } from "react";
 import {
-  ActivityIcon,
-  BotMessageSquareIcon,
-  HouseIcon,
-  MessageSquareIcon,
-  PlugZapIcon,
-  RadioTowerIcon,
-  ScrollTextIcon,
-  SquareTerminalIcon,
-  UsersIcon,
-  UsersRoundIcon,
-  WrenchIcon,
-} from "lucide-react";
+  ChatSquare,
+  ChatSquareCode,
+  CodeSquare,
+  DocumentText,
+  Home,
+  Pulse,
+  Route,
+  Server,
+  UsersGroupRounded,
+  UsersGroupTwoRounded,
+  Widget,
+} from "@solar-icons/react";
 
 export type SidebarItem = {
   titleKey: string;
@@ -24,21 +25,56 @@ export type SidebarSection = {
   items: SidebarItem[];
 };
 
+const DEFAULT_WEIGHT: IconWeight = "Outline";
+
+function makeIcon(
+  SolarIcon: Icon,
+  weight: IconWeight = DEFAULT_WEIGHT,
+): ComponentType<{ className?: string }> {
+  return function SolarIconWrapper({ className }: { className?: string }) {
+    return <SolarIcon {...(className ? { className } : {})} weight={weight} />;
+  };
+}
+
 export const appSidebarSections: SidebarSection[] = [
   {
     labelKey: "sidebar.workspace",
     items: [
-      { titleKey: "common.home", url: "/", icon: HouseIcon },
-      { titleKey: "common.chat", url: "/chat", icon: MessageSquareIcon },
-      { titleKey: "common.users", url: "/users", icon: UsersIcon },
-      { titleKey: "common.providers", url: "/providers", icon: PlugZapIcon },
-      { titleKey: "common.agentConfigs", url: "/agent-configs", icon: BotMessageSquareIcon },
-      { titleKey: "common.agentTeams", url: "/agent-teams", icon: UsersRoundIcon },
-      { titleKey: "common.channels", url: "/channels", icon: RadioTowerIcon },
-      { titleKey: "common.builtInTools", url: "/tools", icon: WrenchIcon },
-      { titleKey: "common.realtime", url: "/realtime", icon: ActivityIcon },
-      { titleKey: "common.logs", url: "/logs", icon: ScrollTextIcon },
-      { titleKey: "common.terminal", url: "/terminal", icon: SquareTerminalIcon },
+      { titleKey: "common.home", url: "/", icon: makeIcon(Home) },
+      { titleKey: "common.chat", url: "/chat", icon: makeIcon(ChatSquare) },
+      {
+        titleKey: "common.users",
+        url: "/users",
+        icon: makeIcon(UsersGroupRounded),
+      },
+      {
+        titleKey: "common.providers",
+        url: "/providers",
+        icon: makeIcon(Server),
+      },
+      {
+        titleKey: "common.agentConfigs",
+        url: "/agent-configs",
+        icon: makeIcon(Widget),
+      },
+      {
+        titleKey: "common.agentTeams",
+        url: "/agent-teams",
+        icon: makeIcon(UsersGroupTwoRounded),
+      },
+      { titleKey: "common.channels", url: "/channels", icon: makeIcon(Route) },
+      {
+        titleKey: "common.builtInTools",
+        url: "/tools",
+        icon: makeIcon(ChatSquareCode),
+      },
+      { titleKey: "common.realtime", url: "/realtime", icon: makeIcon(Pulse) },
+      { titleKey: "common.logs", url: "/logs", icon: makeIcon(DocumentText) },
+      {
+        titleKey: "common.terminal",
+        url: "/terminal",
+        icon: makeIcon(CodeSquare),
+      },
     ],
   },
 ];

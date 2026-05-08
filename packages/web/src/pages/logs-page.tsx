@@ -1,7 +1,7 @@
+import { DocumentText } from "@solar-icons/react"
 import { useDeferredValue, useState } from "react"
 import {
   RefreshCwIcon,
-  ScrollTextIcon,
   SearchIcon,
 } from "lucide-react"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
@@ -108,7 +108,7 @@ export function LogsPage() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <PageHeaderCard
-        icon={<ScrollTextIcon className="size-5" />}
+        icon={<DocumentText weight="Bold" />}
         title="Logs"
         description={`${total} entries`}
         headerRight={

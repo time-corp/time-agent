@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowLeftIcon, BotMessageSquareIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
+import { Widget } from "@solar-icons/react"
 import { toast } from "sonner"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
@@ -69,7 +70,7 @@ export function AgentConfigsEditPage({ agentConfigId }: { agentConfigId: string 
   return (
     <>
       <PageHeaderCard
-        icon={<BotMessageSquareIcon />}
+        icon={<Widget weight="Bold" />}
         title="Edit Agent Config"
         description="Update prompt, model binding, and JSON runtime settings"
         headerRight={

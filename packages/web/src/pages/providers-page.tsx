@@ -1,3 +1,4 @@
+import { Server } from "@solar-icons/react"
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import {
@@ -7,7 +8,6 @@ import {
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
-  PlugZapIcon,
 } from "lucide-react"
 import { DataTable } from "@/components/data-table/data-table"
 import { DataTablePagination } from "@/components/data-table/data-table-pagination"
@@ -56,7 +56,7 @@ export function ProvidersPage() {
   return (
     <>
       <PageHeaderCard
-        icon={<PlugZapIcon />}
+        icon={<Server weight="Bold" />}
         title="Providers"
         description="Manage LLM provider endpoints and credentials"
         titleMeta={totalItems}

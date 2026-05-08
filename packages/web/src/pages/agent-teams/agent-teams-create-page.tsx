@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowLeftIcon, UsersRoundIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
+import { UsersGroupTwoRounded } from "@solar-icons/react"
 import { toast } from "sonner"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
@@ -37,7 +38,7 @@ export function AgentTeamsCreatePage() {
   return (
     <>
       <PageHeaderCard
-        icon={<UsersRoundIcon />}
+        icon={<UsersGroupTwoRounded weight="Bold" />}
         title="New Agent Team"
         description="Group agents under a lead with auto or manual orchestration"
         headerRight={

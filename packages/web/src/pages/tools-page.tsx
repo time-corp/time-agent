@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
-import { RefreshCwIcon, UploadIcon, WrenchIcon } from "lucide-react"
+import { RefreshCwIcon, UploadIcon } from "lucide-react"
+import { ChatSquareCode } from "@solar-icons/react"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Badge } from "@/components/ui/badge"
@@ -151,7 +152,7 @@ export function ToolsPage() {
   return (
     <>
       <PageHeaderCard
-        icon={<WrenchIcon />}
+        icon={<ChatSquareCode weight="Bold" />}
         title="Built-in Tools"
         description="Manage system built-in tools. Enable/disable or configure settings globally."
         titleMeta={tools.length > 0 ? `${tools.length} tools · ${grouped.size} categories` : undefined}

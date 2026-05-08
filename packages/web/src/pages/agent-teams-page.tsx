@@ -1,3 +1,4 @@
+import { UsersGroupTwoRounded } from "@solar-icons/react"
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import {
@@ -7,7 +8,6 @@ import {
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
-  UsersRoundIcon,
 } from "lucide-react"
 import { DataTable } from "@/components/data-table/data-table"
 import { DataTablePagination } from "@/components/data-table/data-table-pagination"
@@ -56,7 +56,7 @@ export function AgentTeamsPage() {
   return (
     <>
       <PageHeaderCard
-        icon={<UsersRoundIcon />}
+        icon={<UsersGroupTwoRounded weight="Bold" />}
         title="Agent Teams"
         description="Organize agents into coordinated teams with a lead agent"
         titleMeta={totalItems}

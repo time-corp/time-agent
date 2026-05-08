@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router"
-import { ArrowLeftIcon, RadioTowerIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
+import { Route } from "@solar-icons/react"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
@@ -71,7 +72,7 @@ export function ChannelsEditPage() {
   return (
     <>
       <PageHeaderCard
-        icon={<RadioTowerIcon />}
+        icon={<Route weight="Bold" />}
         title={`Edit: ${channel.name}`}
         description="Update channel settings. Leave credentials blank to keep existing ones."
         headerRight={

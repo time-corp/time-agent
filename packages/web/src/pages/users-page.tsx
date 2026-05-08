@@ -1,3 +1,4 @@
+import { UsersGroupRounded } from "@solar-icons/react"
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { DataTable } from "@/components/data-table/data-table"
@@ -34,7 +35,6 @@ import {
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
-  UsersIcon,
 } from "lucide-react"
 
 export function UsersPage() {
@@ -66,7 +66,7 @@ export function UsersPage() {
   return (
     <>
       <PageHeaderCard
-        icon={<UsersIcon />}
+        icon={<UsersGroupRounded weight="Bold" />}
         title="Users"
         description="Manage user accounts"
         titleMeta={totalItems}

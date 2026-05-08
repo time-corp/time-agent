@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowLeftIcon, RadioTowerIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
+import { Route } from "@solar-icons/react"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,7 @@ export function ChannelsCreatePage() {
   return (
     <>
       <PageHeaderCard
-        icon={<RadioTowerIcon />}
+        icon={<Route weight="Bold" />}
         title="New Channel"
         description="Connect an agent or team to an external chat platform"
         headerRight={

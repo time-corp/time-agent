@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowLeftIcon, UsersIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
+import { UsersGroupRounded } from "@solar-icons/react"
 
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
@@ -40,7 +41,7 @@ export function UsersEditPage({ userId }: UsersEditPageProps) {
   return (
     <>
       <PageHeaderCard
-        icon={<UsersIcon />}
+        icon={<UsersGroupRounded weight="Bold" />}
         title="Edit User"
         description="Update user account details"
         headerRight={

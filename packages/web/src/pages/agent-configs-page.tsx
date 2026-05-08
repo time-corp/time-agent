@@ -1,7 +1,7 @@
+import { Widget } from "@solar-icons/react"
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import {
-  BotMessageSquareIcon,
   FilterIcon,
   PlusIcon,
   RefreshCwIcon,
@@ -56,7 +56,7 @@ export function AgentConfigsPage() {
   return (
     <>
       <PageHeaderCard
-        icon={<BotMessageSquareIcon />}
+        icon={<Widget weight="Bold" />}
         title="Agent Configs"
         description="Manage prompts, model bindings, and runtime JSON settings"
         titleMeta={totalItems}

@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowLeftIcon, PlugZapIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
+import { Server } from "@solar-icons/react"
 import { PageHeaderCard } from "@/components/share/cards/page-header-card"
 import { SectionCard } from "@/components/share/cards/section-card"
 import { Button } from "@/components/ui/button"
@@ -31,7 +32,7 @@ export function ProvidersCreatePage() {
   return (
     <>
       <PageHeaderCard
-        icon={<PlugZapIcon />}
+        icon={<Server weight="Bold" />}
         title="New Provider"
         description="Create a provider entry for external model access"
         headerRight={
