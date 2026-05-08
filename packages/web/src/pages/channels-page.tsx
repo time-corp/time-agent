@@ -1,6 +1,6 @@
-import { Route } from "@solar-icons/react"
-import { useState } from "react"
-import { Link } from "@tanstack/react-router"
+import { Route } from "@solar-icons/react";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   FilterIcon,
   PlusIcon,
@@ -8,14 +8,18 @@ import {
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
-} from "lucide-react"
-import { DataTable } from "@/components/data-table/data-table"
-import { DataTablePagination } from "@/components/data-table/data-table-pagination"
-import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
-import { PageHeaderCard } from "@/components/share/cards/page-header-card"
-import { SectionCard } from "@/components/share/cards/section-card"
-import { Button } from "@/components/ui/button"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+} from "lucide-react";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { PageHeaderCard } from "@/components/share/cards/page-header-card";
+import { SectionCard } from "@/components/share/cards/section-card";
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,16 +27,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
-import { useDeleteChannelsMutation } from "@/hooks/useChannels"
-import { useChannelsTable } from "@/pages/channels/hooks/use-channels-table"
+} from "@/components/ui/dropdown-menu";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { useDeleteChannelsMutation } from "@/hooks/useChannels";
+import { useChannelsTable } from "@/pages/channels/hooks/use-channels-table";
 
 export function ChannelsPage() {
-  const [query, setQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-  const deleteChannelsMutation = useDeleteChannelsMutation()
+  const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const deleteChannelsMutation = useDeleteChannelsMutation();
   const {
     table,
     totalItems,
@@ -45,13 +54,13 @@ export function ChannelsPage() {
     sorting,
     setPagination,
     setSorting,
-  } = useChannelsTable(query)
+  } = useChannelsTable(query);
 
   const handleDeleteSelected = async () => {
-    await deleteChannelsMutation.mutateAsync(selectedChannelIds)
-    table.resetRowSelection()
-    setIsDeleteOpen(false)
-  }
+    await deleteChannelsMutation.mutateAsync(selectedChannelIds);
+    table.resetRowSelection();
+    setIsDeleteOpen(false);
+  };
 
   return (
     <>
@@ -60,6 +69,13 @@ export function ChannelsPage() {
         title="Channels"
         description="Connect agents and teams to external chat platforms"
         titleMeta={totalItems}
+        mobileAction={
+          <Button asChild size="icon" className="size-10 rounded-lg">
+            <Link to="/channels/create">
+              <PlusIcon />
+            </Link>
+          </Button>
+        }
         headerRight={
           <Button asChild size="lg">
             <Link to="/channels/create">
@@ -108,8 +124,8 @@ export function ChannelsPage() {
                   value={query}
                   placeholder="Search channels..."
                   onChange={(event) => {
-                    setQuery(event.target.value)
-                    setPagination((current) => ({ ...current, pageIndex: 0 }))
+                    setQuery(event.target.value);
+                    setPagination((current) => ({ ...current, pageIndex: 0 }));
                   }}
                 />
               </InputGroup>
@@ -151,7 +167,9 @@ export function ChannelsPage() {
                       <DropdownMenuCheckboxItem
                         key={column.id}
                         checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
                       >
                         {column.id}
                       </DropdownMenuCheckboxItem>
@@ -170,7 +188,9 @@ export function ChannelsPage() {
                     <Button
                       type="button"
                       size="sm"
-                      variant={sorting[0]?.id === "name" ? "secondary" : "outline"}
+                      variant={
+                        sorting[0]?.id === "name" ? "secondary" : "outline"
+                      }
                       onClick={() => setSorting([{ id: "name", desc: false }])}
                     >
                       Name
@@ -178,7 +198,9 @@ export function ChannelsPage() {
                     <Button
                       type="button"
                       size="sm"
-                      variant={sorting[0]?.id === "type" ? "secondary" : "outline"}
+                      variant={
+                        sorting[0]?.id === "type" ? "secondary" : "outline"
+                      }
                       onClick={() => setSorting([{ id: "type", desc: false }])}
                     >
                       Type
@@ -193,7 +215,9 @@ export function ChannelsPage() {
                       size="sm"
                       variant={sorting[0]?.desc ? "outline" : "secondary"}
                       onClick={() =>
-                        setSorting((cur) => [{ id: cur[0]?.id ?? "name", desc: false }])
+                        setSorting((cur) => [
+                          { id: cur[0]?.id ?? "name", desc: false },
+                        ])
                       }
                     >
                       Ascending
@@ -203,7 +227,9 @@ export function ChannelsPage() {
                       size="sm"
                       variant={sorting[0]?.desc ? "secondary" : "outline"}
                       onClick={() =>
-                        setSorting((cur) => [{ id: cur[0]?.id ?? "name", desc: true }])
+                        setSorting((cur) => [
+                          { id: cur[0]?.id ?? "name", desc: true },
+                        ])
                       }
                     >
                       Descending
@@ -220,7 +246,11 @@ export function ChannelsPage() {
             </div>
           ) : (
             <>
-              <DataTable table={table} loading={isLoading} emptyMessage="No channels found." />
+              <DataTable
+                table={table}
+                loading={isLoading}
+                emptyMessage="No channels found."
+              />
               <DataTablePagination
                 table={table}
                 rowCount={totalItems}
@@ -231,5 +261,5 @@ export function ChannelsPage() {
         </div>
       </SectionCard>
     </>
-  )
+  );
 }

@@ -1,17 +1,18 @@
-import type { ReactNode } from "react"
+import type { ReactNode } from "react";
 
-import { Badge } from "@/components/ui/badge"
-import { CardDescription, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge";
+import { CardDescription, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type PageHeaderCardProps = {
-  icon?: ReactNode
-  title: string
-  description?: string
-  titleMeta?: ReactNode
-  headerRight?: ReactNode
-  className?: string
-}
+  icon?: ReactNode;
+  title: string;
+  description?: string;
+  titleMeta?: ReactNode;
+  headerRight?: ReactNode;
+  mobileAction?: ReactNode;
+  className?: string;
+};
 
 export function PageHeaderCard({
   icon,
@@ -19,39 +20,46 @@ export function PageHeaderCard({
   description,
   titleMeta,
   headerRight,
+  mobileAction,
   className,
 }: PageHeaderCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 md:flex-row md:items-center md:justify-between",
-        className
+        "flex items-start justify-between gap-3 md:items-center",
+        className,
       )}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          {icon ? (
-            <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-white">
-              {icon}
-            </div>
-          ) : null}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3">
-              <CardTitle>{title}</CardTitle>
-              {titleMeta !== undefined ? (
-                <Badge variant="secondary" className="rounded-md px-2 py-0.5">
-                  {titleMeta}
-                </Badge>
-              ) : null}
-            </div>
-            {description ? (
-              <CardDescription>{description}</CardDescription>
+      <div className="flex min-w-0 items-center gap-3">
+        {icon ? (
+          <div className="hidden shrink-0 size-11 items-center justify-center rounded-xl bg-primary text-white md:flex">
+            {icon}
+          </div>
+        ) : null}
+        <div className="min-w-0 flex flex-col gap-0.5">
+          <div className="flex items-center gap-3">
+            <CardTitle>{title}</CardTitle>
+            {titleMeta !== undefined ? (
+              <Badge variant="secondary" className="rounded-md px-2 py-0.5">
+                {titleMeta}
+              </Badge>
             ) : null}
           </div>
+          {description ? (
+            <CardDescription className="truncate">
+              {description}
+            </CardDescription>
+          ) : null}
         </div>
       </div>
 
-      {headerRight ? <div className="shrink-0">{headerRight}</div> : null}
+      {mobileAction ? (
+        <div className="shrink-0 md:hidden">{mobileAction}</div>
+      ) : null}
+
+      {headerRight ? (
+        <div className="hidden shrink-0 md:block">{headerRight}</div>
+      ) : null}
     </div>
-  )
+  );
 }

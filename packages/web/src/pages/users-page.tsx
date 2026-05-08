@@ -1,17 +1,17 @@
-import { UsersGroupRounded } from "@solar-icons/react"
-import { useState } from "react"
-import { Link } from "@tanstack/react-router"
-import { DataTable } from "@/components/data-table/data-table"
-import { DataTablePagination } from "@/components/data-table/data-table-pagination"
-import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
-import { PageHeaderCard } from "@/components/share/cards/page-header-card"
-import { SectionCard } from "@/components/share/cards/section-card"
-import { Button } from "@/components/ui/button"
+import { UsersGroupRounded } from "@solar-icons/react";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { PageHeaderCard } from "@/components/share/cards/page-header-card";
+import { SectionCard } from "@/components/share/cards/section-card";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,15 +19,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
   InputGroupText,
-} from "@/components/ui/input-group"
-import { useDeleteUsersMutation } from "@/hooks/useUsers"
-import { useUsersTable } from "@/pages/users/hooks/use-users-table"
+} from "@/components/ui/input-group";
+import { useDeleteUsersMutation } from "@/hooks/useUsers";
+import { useUsersTable } from "@/pages/users/hooks/use-users-table";
 import {
   FilterIcon,
   PlusIcon,
@@ -35,13 +35,13 @@ import {
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
-} from "lucide-react"
+} from "lucide-react";
 
 export function UsersPage() {
-  const [query, setQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-  const deleteUsersMutation = useDeleteUsersMutation()
+  const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const deleteUsersMutation = useDeleteUsersMutation();
 
   const {
     table,
@@ -55,13 +55,13 @@ export function UsersPage() {
     sorting,
     setPagination,
     setSorting,
-  } = useUsersTable(query)
+  } = useUsersTable(query);
 
   const handleDeleteSelected = async () => {
-    await deleteUsersMutation.mutateAsync(selectedUserIds)
-    table.resetRowSelection()
-    setIsDeleteOpen(false)
-  }
+    await deleteUsersMutation.mutateAsync(selectedUserIds);
+    table.resetRowSelection();
+    setIsDeleteOpen(false);
+  };
 
   return (
     <>
@@ -70,6 +70,13 @@ export function UsersPage() {
         title="Users"
         description="Manage user accounts"
         titleMeta={totalItems}
+        mobileAction={
+          <Button asChild size="icon" className="size-10 rounded-lg">
+            <Link to="/users/create">
+              <PlusIcon />
+            </Link>
+          </Button>
+        }
         headerRight={
           <Button asChild size="lg">
             <Link to="/users/create">
@@ -118,8 +125,8 @@ export function UsersPage() {
                   value={query}
                   placeholder="Search users..."
                   onChange={(event) => {
-                    setQuery(event.target.value)
-                    setPagination((current) => ({ ...current, pageIndex: 0 }))
+                    setQuery(event.target.value);
+                    setPagination((current) => ({ ...current, pageIndex: 0 }));
                   }}
                 />
               </InputGroup>
@@ -184,15 +191,21 @@ export function UsersPage() {
                     <Button
                       type="button"
                       size="sm"
-                      variant={sorting[0]?.id === "username" ? "secondary" : "outline"}
-                      onClick={() => setSorting([{ id: "username", desc: false }])}
+                      variant={
+                        sorting[0]?.id === "username" ? "secondary" : "outline"
+                      }
+                      onClick={() =>
+                        setSorting([{ id: "username", desc: false }])
+                      }
                     >
                       Username
                     </Button>
                     <Button
                       type="button"
                       size="sm"
-                      variant={sorting[0]?.id === "email" ? "secondary" : "outline"}
+                      variant={
+                        sorting[0]?.id === "email" ? "secondary" : "outline"
+                      }
                       onClick={() => setSorting([{ id: "email", desc: false }])}
                     >
                       Email
@@ -267,5 +280,5 @@ export function UsersPage() {
         </div>
       </SectionCard>
     </>
-  )
+  );
 }

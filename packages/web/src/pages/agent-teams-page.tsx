@@ -1,6 +1,6 @@
-import { UsersGroupTwoRounded } from "@solar-icons/react"
-import { useState } from "react"
-import { Link } from "@tanstack/react-router"
+import { UsersGroupTwoRounded } from "@solar-icons/react";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   FilterIcon,
   PlusIcon,
@@ -8,14 +8,18 @@ import {
   SearchIcon,
   Settings2Icon,
   Trash2Icon,
-} from "lucide-react"
-import { DataTable } from "@/components/data-table/data-table"
-import { DataTablePagination } from "@/components/data-table/data-table-pagination"
-import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
-import { PageHeaderCard } from "@/components/share/cards/page-header-card"
-import { SectionCard } from "@/components/share/cards/section-card"
-import { Button } from "@/components/ui/button"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+} from "lucide-react";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { PageHeaderCard } from "@/components/share/cards/page-header-card";
+import { SectionCard } from "@/components/share/cards/section-card";
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,16 +27,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
-import { useDeleteAgentTeamsMutation } from "@/hooks/useAgentTeams"
-import { useAgentTeamsTable } from "@/pages/agent-teams/hooks/use-agent-teams-table"
+} from "@/components/ui/dropdown-menu";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { useDeleteAgentTeamsMutation } from "@/hooks/useAgentTeams";
+import { useAgentTeamsTable } from "@/pages/agent-teams/hooks/use-agent-teams-table";
 
 export function AgentTeamsPage() {
-  const [query, setQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-  const deleteTeamsMutation = useDeleteAgentTeamsMutation()
+  const [query, setQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const deleteTeamsMutation = useDeleteAgentTeamsMutation();
   const {
     table,
     totalItems,
@@ -45,13 +54,13 @@ export function AgentTeamsPage() {
     sorting,
     setPagination,
     setSorting,
-  } = useAgentTeamsTable(query)
+  } = useAgentTeamsTable(query);
 
   const handleDeleteSelected = async () => {
-    await deleteTeamsMutation.mutateAsync(selectedTeamIds)
-    table.resetRowSelection()
-    setIsDeleteOpen(false)
-  }
+    await deleteTeamsMutation.mutateAsync(selectedTeamIds);
+    table.resetRowSelection();
+    setIsDeleteOpen(false);
+  };
 
   return (
     <>
@@ -60,6 +69,13 @@ export function AgentTeamsPage() {
         title="Agent Teams"
         description="Organize agents into coordinated teams with a lead agent"
         titleMeta={totalItems}
+        mobileAction={
+          <Button asChild size="icon" className="size-10 rounded-lg">
+            <Link to="/agent-teams/create">
+              <PlusIcon />
+            </Link>
+          </Button>
+        }
         headerRight={
           <Button asChild size="lg">
             <Link to="/agent-teams/create">
@@ -81,7 +97,12 @@ export function AgentTeamsPage() {
               confirmLabel="Delete"
               onConfirm={handleDeleteSelected}
               trigger={
-                <Button type="button" size="sm" variant="destructive" disabled={deleteTeamsMutation.isPending}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  disabled={deleteTeamsMutation.isPending}
+                >
                   <Trash2Icon data-icon="inline-start" />
                   Delete {selectedTeamIds.length} selected
                 </Button>
@@ -103,14 +124,20 @@ export function AgentTeamsPage() {
                   value={query}
                   placeholder="Search teams..."
                   onChange={(event) => {
-                    setQuery(event.target.value)
-                    setPagination((current) => ({ ...current, pageIndex: 0 }))
+                    setQuery(event.target.value);
+                    setPagination((current) => ({ ...current, pageIndex: 0 }));
                   }}
                 />
               </InputGroup>
             </div>
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={() => void refetch()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isFetching}
+                onClick={() => void refetch()}
+              >
                 <RefreshCwIcon data-icon="inline-start" />
                 Refresh
               </Button>
@@ -132,15 +159,20 @@ export function AgentTeamsPage() {
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {table.getAllColumns().filter((column) => column.getCanHide()).map((column) => (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  ))}
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -152,10 +184,26 @@ export function AgentTeamsPage() {
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium">Sort by</p>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant={sorting[0]?.id === "name" ? "secondary" : "outline"} onClick={() => setSorting([{ id: "name", desc: false }])}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={
+                        sorting[0]?.id === "name" ? "secondary" : "outline"
+                      }
+                      onClick={() => setSorting([{ id: "name", desc: false }])}
+                    >
                       Name
                     </Button>
-                    <Button type="button" size="sm" variant={sorting[0]?.id === "updatedAt" ? "secondary" : "outline"} onClick={() => setSorting([{ id: "updatedAt", desc: true }])}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={
+                        sorting[0]?.id === "updatedAt" ? "secondary" : "outline"
+                      }
+                      onClick={() =>
+                        setSorting([{ id: "updatedAt", desc: true }])
+                      }
+                    >
                       Updated
                     </Button>
                   </div>
@@ -163,10 +211,28 @@ export function AgentTeamsPage() {
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium">Direction</p>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant={sorting[0]?.desc ? "outline" : "secondary"} onClick={() => setSorting((current) => [{ id: current[0]?.id ?? "name", desc: false }])}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={sorting[0]?.desc ? "outline" : "secondary"}
+                      onClick={() =>
+                        setSorting((current) => [
+                          { id: current[0]?.id ?? "name", desc: false },
+                        ])
+                      }
+                    >
                       Ascending
                     </Button>
-                    <Button type="button" size="sm" variant={sorting[0]?.desc ? "secondary" : "outline"} onClick={() => setSorting((current) => [{ id: current[0]?.id ?? "name", desc: true }])}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={sorting[0]?.desc ? "secondary" : "outline"}
+                      onClick={() =>
+                        setSorting((current) => [
+                          { id: current[0]?.id ?? "name", desc: true },
+                        ])
+                      }
+                    >
                       Descending
                     </Button>
                   </div>
@@ -181,12 +247,20 @@ export function AgentTeamsPage() {
             </div>
           ) : (
             <>
-              <DataTable table={table} loading={isLoading} emptyMessage="No agent teams found." />
-              <DataTablePagination table={table} rowCount={totalItems} pageSizeOptions={pageSizeOptions} />
+              <DataTable
+                table={table}
+                loading={isLoading}
+                emptyMessage="No agent teams found."
+              />
+              <DataTablePagination
+                table={table}
+                rowCount={totalItems}
+                pageSizeOptions={pageSizeOptions}
+              />
             </>
           )}
         </div>
       </SectionCard>
     </>
-  )
+  );
 }
