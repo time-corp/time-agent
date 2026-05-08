@@ -12,11 +12,12 @@ import {
   SidebarRail,
   useSidebar,
 } from "./ui/sidebar";
+import LogoIcon from "./icons/logo-icon";
 
 const teams = [
   {
     name: "Time Agent V4",
-    logo: <span className="text-sm font-bold">T</span>,
+    logo: <LogoIcon className="size-8 rounded-md" />,
     plan: "Web workspace",
   },
 ];

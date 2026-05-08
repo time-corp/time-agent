@@ -37,7 +37,7 @@ export function NavMain({ sections }: { sections: SidebarSection[] }) {
                     isActive={isActive}
                     size="lg"
                     tooltip={t(item.titleKey)}
-                    className="group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&_svg]:size-5"
+                    className="group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&_svg]:size-6"
                   >
                     <Link
                       to={item.url}
@@ -47,7 +47,7 @@ export function NavMain({ sections }: { sections: SidebarSection[] }) {
                         }
                       }}
                     >
-                      <Icon className="size-5" />
+                      <Icon className="size-5 group-data-[collapsible=icon]:size-6" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         {t(item.titleKey)}
                       </span>
