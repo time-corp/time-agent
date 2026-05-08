@@ -23,7 +23,7 @@ type ProviderTypeOption = {
   image?: string
 }
 
-const providerTypeMeta: Record<ProviderTypeValue, Omit<ProviderTypeOption, "value">> = {
+export const providerTypeMeta: Record<ProviderTypeValue, Omit<ProviderTypeOption, "value">> = {
   openai: {
     label: "ChatGPT / OpenAI",
     image: "/images/providers/openai.png",
