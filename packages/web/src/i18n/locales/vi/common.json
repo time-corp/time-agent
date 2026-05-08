@@ -30,6 +30,7 @@
     "chatEmpty": "Gửi tin nhắn để bắt đầu trò chuyện.",
     "chatPlaceholder": "Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)",
     "chatHint": "Enter để gửi · Shift+Enter xuống dòng",
-    "logs": "Nhật ký"
+    "logs": "Nhật ký",
+    "terminal": "Terminal"
   }
 }

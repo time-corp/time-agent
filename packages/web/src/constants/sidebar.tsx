@@ -7,6 +7,7 @@ import {
   PlugZapIcon,
   RadioTowerIcon,
   ScrollTextIcon,
+  SquareTerminalIcon,
   UsersIcon,
   UsersRoundIcon,
   WrenchIcon,
@@ -37,6 +38,7 @@ export const appSidebarSections: SidebarSection[] = [
       { titleKey: "common.builtInTools", url: "/tools", icon: WrenchIcon },
       { titleKey: "common.realtime", url: "/realtime", icon: ActivityIcon },
       { titleKey: "common.logs", url: "/logs", icon: ScrollTextIcon },
+      { titleKey: "common.terminal", url: "/terminal", icon: SquareTerminalIcon },
     ],
   },
 ];

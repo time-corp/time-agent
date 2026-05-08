@@ -36,6 +36,6 @@ export const useLogsQuery = (filter: LogsFilter, refetchInterval?: number): UseQ
   return useQuery<LogsResponse>({
     queryKey: ["logs", filter],
     queryFn: () => request<LogsResponse>(`${LOGS_API}?${params}`),
-    refetchInterval,
+    ...(refetchInterval !== undefined && { refetchInterval }),
   })
 }
