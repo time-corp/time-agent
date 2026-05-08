@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.5.2",
   "scripts": {
+    "postinstall": "find node_modules/.pnpm -name 'spawn-helper' -path '*/darwin-arm64/*' -exec chmod +x {} \\; 2>/dev/null || true",
     "dev:api": "pnpm --filter @time/api dev",
     "dev:web": "pnpm --filter @time/web dev",
     "dev": "pnpm -r --parallel --filter @time/api --filter @time/web dev",

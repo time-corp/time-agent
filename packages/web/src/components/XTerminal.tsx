@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
@@ -8,15 +8,23 @@ const getWsUrl = () => {
   return `${proto}://${location.host}/api/v1/terminal`;
 };
 
-export function XTerminal() {
+export type XTerminalHandle = {
+  connect: () => void;
+};
+
+type Props = {
+  onConnectionChange?: (connected: boolean) => void;
+};
+
+export const XTerminal = forwardRef<XTerminalHandle, Props>(function XTerminal({ onConnectionChange }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const termRef = useRef<Terminal | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
-
-    let disposed = false;
-    let ws: WebSocket | null = null;
-    let ro: ResizeObserver | null = null;
 
     const term = new Terminal({
       cursorBlink: true,
@@ -51,72 +59,86 @@ export function XTerminal() {
     term.loadAddon(fitAddon);
     term.open(containerRef.current);
     fitAddon.fit();
-    term.focus();
-    term.write("\x1b[90mConnecting...\x1b[0m\r\n");
+    term.write("\x1b[90mPress Connect to start a terminal session.\x1b[0m\r\n");
 
     const handleClick = () => term.focus();
     containerRef.current.addEventListener("click", handleClick);
 
-    const initTimer = setTimeout(() => {
-      if (disposed) return;
-
-      ws = new WebSocket(getWsUrl());
-
-      ws.onopen = () => {
-        term.write("\x1b[90m[connected]\x1b[0m\r\n");
-        ws!.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
-      };
-
-      ws.onerror = () => {
-        term.write("\x1b[31m[websocket error — check API server]\x1b[0m\r\n");
-      };
-
-      ws.onmessage = (e) => {
-        try {
-          const msg = JSON.parse(e.data as string) as { type: string; data?: string; code?: number };
-          if (msg.type === "output" && msg.data) {
-            term.write(msg.data);
-          } else if (msg.type === "exit") {
-            term.write(`\r\n\x1b[90m[process exited with code ${msg.code}]\x1b[0m\r\n`);
-          }
-        } catch {
-          // ignore malformed messages
-        }
-      };
-
-      ws.onclose = (e) => {
-        if (!disposed) {
-          term.write(`\r\n\x1b[90m[connection closed — code ${e.code}]\x1b[0m\r\n`);
-        }
-      };
-
-      term.onData((data) => {
-        if (ws?.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "input", data }));
-        }
-      });
-
-      ro = new ResizeObserver(() => {
-        fitAddon.fit();
-        if (ws?.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
-        }
-      });
-
-      if (containerRef.current) {
-        ro.observe(containerRef.current);
-      }
-    }, 0);
+    termRef.current = term;
+    fitAddonRef.current = fitAddon;
 
     return () => {
-      disposed = true;
-      clearTimeout(initTimer);
       containerRef.current?.removeEventListener("click", handleClick);
-      ro?.disconnect();
-      ws?.close();
+      roRef.current?.disconnect();
+      wsRef.current?.close();
       term.dispose();
+      termRef.current = null;
+      fitAddonRef.current = null;
+      wsRef.current = null;
     };
   }, []);
 
+  const connect = useCallback(() => {
+    const term = termRef.current;
+    const fitAddon = fitAddonRef.current;
+    if (!term || !fitAddon) return;
+
+    wsRef.current?.close();
+    roRef.current?.disconnect();
+
+    term.write("\x1b[90mConnecting...\x1b[0m\r\n");
+
+    const ws = new WebSocket(getWsUrl());
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      onConnectionChange?.(true);
+      term.write("\x1b[90m[connected]\x1b[0m\r\n");
+      ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+      term.focus();
+    };
+
+    ws.onerror = () => {
+      term.write("\x1b[31m[websocket error — check API server]\x1b[0m\r\n");
+    };
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data as string) as { type: string; data?: string; code?: number };
+        if (msg.type === "output" && msg.data) {
+          term.write(msg.data);
+        } else if (msg.type === "exit") {
+          term.write(`\r\n\x1b[90m[process exited with code ${msg.code}]\x1b[0m\r\n`);
+          onConnectionChange?.(false);
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    ws.onclose = (e) => {
+      onConnectionChange?.(false);
+      term.write(`\r\n\x1b[90m[connection closed — code ${e.code}]\x1b[0m\r\n`);
+    };
+
+    term.onData((data) => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "input", data }));
+      }
+    });
+
+    const ro = new ResizeObserver(() => {
+      fitAddon.fit();
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+      }
+    });
+
+    if (containerRef.current) ro.observe(containerRef.current);
+    roRef.current = ro;
+  }, [onConnectionChange]);
+
+  useImperativeHandle(ref, () => ({ connect }), [connect]);
+
   return <div ref={containerRef} className="h-full w-full" />;
-}
+});

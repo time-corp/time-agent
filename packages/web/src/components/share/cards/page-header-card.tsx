@@ -32,7 +32,7 @@ export function PageHeaderCard({
     >
       <div className="flex min-w-0 items-center gap-3">
         {icon ? (
-          <div className="hidden shrink-0 size-11 items-center justify-center rounded-xl bg-primary text-white md:flex">
+          <div className="hidden shrink-0 size-11 items-center justify-center rounded-xl bg-primary text-white md:flex text-2xl">
             {icon}
           </div>
         ) : null}
