@@ -31,6 +31,8 @@
     "chatPlaceholder": "Type a message... (Enter to send, Shift+Enter for new line)",
     "chatHint": "Enter to send · Shift+Enter for new line",
     "logs": "Logs",
-    "terminal": "Terminal"
+    "terminal": "Terminal",
+    "agents": "Agents",
+    "more": "More"
   }
 }

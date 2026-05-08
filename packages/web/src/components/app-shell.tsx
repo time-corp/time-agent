@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,7 +38,7 @@ export function AppShell({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="bg-sidebar">
-        <header className="sticky top-0 z-20 flex h-18 shrink-0 items-center justify-between gap-2 bg-sidebar">
+        <header className="sticky top-0 z-20 hidden h-18 shrink-0 items-center justify-between gap-2 bg-sidebar md:flex">
           <div className="flex w-full items-center justify-between gap-3 px-5 py-4">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1 rounded-full border text-foreground" />
@@ -69,12 +70,13 @@ export function AppShell({
         </header>
         <div className="flex flex-1 flex-col overflow-hidden px-0">
           <div className="flex flex-1 flex-col overflow-auto rounded-none bg-app-main bg-cover bg-fixed bg-no-repeat lg:rounded-tl-2xl">
-            <div className="mx-auto flex w-full max-w-360 flex-1 flex-col gap-8 px-4 py-6 md:px-7 md:py-7">
+            <div className="mx-auto flex w-full max-w-360 flex-1 flex-col gap-8 px-4 py-6 pb-22 md:px-7 md:py-7 md:pb-7">
               {children}
             </div>
           </div>
         </div>
       </SidebarInset>
+      <MobileBottomNav />
     </SidebarProvider>
   );
 }

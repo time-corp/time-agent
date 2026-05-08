@@ -31,6 +31,8 @@
     "chatPlaceholder": "Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)",
     "chatHint": "Enter để gửi · Shift+Enter xuống dòng",
     "logs": "Nhật ký",
-    "terminal": "Terminal"
+    "terminal": "Terminal",
+    "agents": "Agents",
+    "more": "Thêm"
   }
 }
