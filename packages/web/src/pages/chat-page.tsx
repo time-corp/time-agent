@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SendHorizonal, Bot, User, Loader2, GitBranch, AlertCircle, Square } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import {
+  SendHorizonal,
+  Bot,
+  User,
+  Loader2,
+  GitBranch,
+  AlertCircle,
+  Square,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+import type { Components } from "streamdown";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
 import { useAgentTeamsQuery } from "@/hooks/useAgentTeams";
 import {
@@ -15,14 +24,19 @@ import {
 } from "@/hooks/useChatHistory";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 type Mode = "generate" | "stream";
 type SourceType = "agent" | "team";
 
-const EMPTY: never[] = []
+const EMPTY: never[] = [];
 
 type Message = {
   id: string;
@@ -32,45 +46,87 @@ type Message = {
 };
 
 type GenerateResponse = {
-  text: string
-  traceId?: string | null
-}
+  text: string;
+  traceId?: string | null;
+};
 
 type ApiEnvelope<T> = {
-  data: T
-}
+  data: T;
+};
 
 type TraceTreeNode = {
-  id: string
-  label: string
-  type: string
-  status: "success" | "running" | "error"
-  durationMs: number | null
-  children: TraceTreeNode[]
-}
+  id: string;
+  label: string;
+  type: string;
+  status: "success" | "running" | "error";
+  durationMs: number | null;
+  children: TraceTreeNode[];
+};
+
+const streamdownComponents: Components = {
+  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+  ol: ({ children }) => (
+    <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>
+  ),
+  ul: ({ children }) => (
+    <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>
+  ),
+  li: ({ children }) => <li>{children}</li>,
+  h1: ({ children }) => (
+    <h1 className="mb-2 text-base font-semibold last:mb-0">{children}</h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-2 text-[15px] font-semibold last:mb-0">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-2 text-sm font-semibold last:mb-0">{children}</h3>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold">{children}</strong>
+  ),
+  inlineCode: ({ children }) => (
+    <code className="rounded bg-background/70 px-1 py-0.5 text-[0.9em]">
+      {children}
+    </code>
+  ),
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="text-primary underline underline-offset-2"
+    >
+      {children}
+    </a>
+  ),
+};
 
 async function getErrorMessage(response: Response) {
-  const contentType = response.headers.get("Content-Type") ?? ""
+  const contentType = response.headers.get("Content-Type") ?? "";
 
   try {
     if (contentType.includes("application/json")) {
       const data = (await response.json()) as {
-        error?: { message?: string }
-        message?: string
-      }
-      return data.error?.message ?? data.message ?? `Request failed: ${response.status}`
+        error?: { message?: string };
+        message?: string;
+      };
+      return (
+        data.error?.message ??
+        data.message ??
+        `Request failed: ${response.status}`
+      );
     }
 
-    const text = await response.text()
-    return text || `Request failed: ${response.status}`
+    const text = await response.text();
+    return text || `Request failed: ${response.status}`;
   } catch {
-    return `Request failed: ${response.status}`
+    return `Request failed: ${response.status}`;
   }
 }
 
 function parseStreamChunk(chunk: string): string {
   if (!chunk.includes("data: ")) {
-    return chunk
+    return chunk;
   }
 
   let text = "";
@@ -80,7 +136,10 @@ function parseStreamChunk(chunk: string): string {
     if (raw === "[DONE]") break;
     try {
       const event = JSON.parse(raw);
-      if (event.type === "text-delta" && typeof event.payload?.text === "string") {
+      if (
+        event.type === "text-delta" &&
+        typeof event.payload?.text === "string"
+      ) {
         text += event.payload.text;
       }
     } catch {
@@ -90,14 +149,10 @@ function parseStreamChunk(chunk: string): string {
   return text;
 }
 
-function formatDisplayedMessage(content: string): string {
-  if (!content) return content
+function normalizeMessageContent(content: string): string {
+  if (!content) return content;
 
-  return content
-    .replace(/\r\n/g, "\n")
-    .replace(/([^\n])(\s+)(?=###\s)/g, "$1\n")
-    .replace(/([^\n])(\s+)(?=\d+\.\s)/g, "$1\n")
-    .replace(/([^\n])(\s+)(?=[-*•]\s)/g, "$1\n")
+  return content.replace(/\r\n/g, "\n");
 }
 
 export function ChatPage() {
@@ -114,106 +169,120 @@ export function ChatPage() {
   const [isDraftThread, setIsDraftThread] = useState(true);
   const [activeTraceId, setActiveTraceId] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null)
-  const queryClient = useQueryClient()
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const queryClient = useQueryClient();
 
-  const { data: agentConfigsData, isLoading: isLoadingAgentConfigs } = useAgentConfigsQuery()
-  const { data: agentTeamsData, isLoading: isLoadingTeams } = useAgentTeamsQuery()
-  const agentConfigs = agentConfigsData ?? EMPTY
-  const agentTeams = agentTeamsData ?? EMPTY
-  const activeAgentConfigs = useMemo(() => agentConfigs.filter((a) => a.isActive), [agentConfigs])
-  const activeTeams = useMemo(() => agentTeams.filter((team) => team.isActive), [agentTeams])
+  const { data: agentConfigsData, isLoading: isLoadingAgentConfigs } =
+    useAgentConfigsQuery();
+  const { data: agentTeamsData, isLoading: isLoadingTeams } =
+    useAgentTeamsQuery();
+  const agentConfigs = agentConfigsData ?? EMPTY;
+  const agentTeams = agentTeamsData ?? EMPTY;
+  const activeAgentConfigs = useMemo(
+    () => agentConfigs.filter((a) => a.isActive),
+    [agentConfigs],
+  );
+  const activeTeams = useMemo(
+    () => agentTeams.filter((team) => team.isActive),
+    [agentTeams],
+  );
 
-  const selectedId = sourceType === "agent" ? selectedAgentConfigId : selectedTeamId
-  const resourceId = selectedId
+  const selectedId =
+    sourceType === "agent" ? selectedAgentConfigId : selectedTeamId;
+  const resourceId = selectedId;
 
   const { data: agentThreadsData } = useChatThreadsQuery(
     sourceType === "agent" ? selectedAgentConfigId : "",
     sourceType === "agent" ? resourceId : "",
-  )
+  );
   const { data: teamThreadsData } = useTeamChatThreadsQuery(
     sourceType === "team" ? selectedTeamId : "",
     sourceType === "team" ? resourceId : "",
-  )
-  const agentThreads = agentThreadsData ?? EMPTY
-  const teamThreads = teamThreadsData ?? EMPTY
+  );
+  const agentThreads = agentThreadsData ?? EMPTY;
+  const teamThreads = teamThreadsData ?? EMPTY;
   const threads = useMemo(
     () => (sourceType === "agent" ? agentThreads : teamThreads),
     [sourceType, agentThreads, teamThreads],
-  )
+  );
 
-  const persistedThreadId = isDraftThread ? "" : threadId
+  const persistedThreadId = isDraftThread ? "" : threadId;
 
   const { data: agentMessagesData } = useChatMessagesQuery(
     sourceType === "agent" ? selectedAgentConfigId : "",
     sourceType === "agent" ? persistedThreadId : "",
     sourceType === "agent" ? resourceId : "",
-  )
+  );
   const { data: teamMessagesData } = useTeamChatMessagesQuery(
     sourceType === "team" ? selectedTeamId : "",
     sourceType === "team" ? persistedThreadId : "",
     sourceType === "team" ? resourceId : "",
-  )
-  const agentMessages = agentMessagesData ?? EMPTY
-  const teamMessages = teamMessagesData ?? EMPTY
+  );
+  const agentMessages = agentMessagesData ?? EMPTY;
+  const teamMessages = teamMessagesData ?? EMPTY;
   const threadMessages = useMemo(
     () => (sourceType === "agent" ? agentMessages : teamMessages),
     [sourceType, agentMessages, teamMessages],
-  )
-  const traceSourceId = sourceType === "agent" ? selectedAgentConfigId : selectedTeamId
+  );
+  const traceSourceId =
+    sourceType === "agent" ? selectedAgentConfigId : selectedTeamId;
   const { data: activeTrace, isLoading: isLoadingTrace } = useChatTraceQuery(
     sourceType,
     traceSourceId,
     persistedThreadId,
     resourceId,
     activeTraceId,
-  )
+  );
 
   function resetChat() {
-    setMessages([])
-    setThreadId(crypto.randomUUID())
-    setIsDraftThread(true)
-    setActiveTraceId("")
+    setMessages([]);
+    setThreadId(crypto.randomUUID());
+    setIsDraftThread(true);
+    setActiveTraceId("");
   }
 
   function handleSourceTypeChange(next: SourceType) {
-    setSourceType(next)
-    resetChat()
+    setSourceType(next);
+    resetChat();
   }
 
   function handleAgentChange(agentId: string) {
-    setSelectedAgentConfigId(agentId)
-    resetChat()
+    setSelectedAgentConfigId(agentId);
+    resetChat();
   }
 
   function handleTeamChange(teamId: string) {
-    setSelectedTeamId(teamId)
-    resetChat()
+    setSelectedTeamId(teamId);
+    resetChat();
   }
 
   useEffect(() => {
     if (!selectedAgentConfigId && activeAgentConfigs[0]?.id) {
-      setSelectedAgentConfigId(activeAgentConfigs[0].id)
-      resetChat()
+      setSelectedAgentConfigId(activeAgentConfigs[0].id);
+      resetChat();
     }
-  }, [activeAgentConfigs, selectedAgentConfigId])
+  }, [activeAgentConfigs, selectedAgentConfigId]);
 
   useEffect(() => {
     if (!selectedTeamId && activeTeams[0]?.id) {
-      setSelectedTeamId(activeTeams[0].id)
-      resetChat()
+      setSelectedTeamId(activeTeams[0].id);
+      resetChat();
     }
-  }, [activeTeams, selectedTeamId])
+  }, [activeTeams, selectedTeamId]);
 
   useEffect(() => {
-    if (isDraftThread) return
+    if (isDraftThread) return;
 
-    const latestThreadId = threads[0]?.id
+    const latestThreadId = threads[0]?.id;
     if (!latestThreadId) {
-      setMessages([])
-      return
+      setMessages([]);
+      return;
     }
-    setThreadId((current) => (threads.some((thread) => thread.id === current) ? current : latestThreadId))
+    setThreadId((current) =>
+      threads.some((thread) => thread.id === current)
+        ? current
+        : latestThreadId,
+    );
   }, [threads]);
 
   useEffect(() => {
@@ -224,7 +293,7 @@ export function ChatPage() {
         content: message.content,
         ...(message.traceId ? { traceId: message.traceId } : {}),
       })),
-    )
+    );
   }, [threadMessages]);
 
   useEffect(() => {
@@ -236,27 +305,31 @@ export function ChatPage() {
     if (!content || loading || !selectedId) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content };
-    const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
+    const assistantMsg: Message = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: "",
+    };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput("");
     setLoading(true);
-    setIsStopping(false)
+    setIsStopping(false);
 
     const requestMessages = [{ role: userMsg.role, content: userMsg.content }];
-    const currentThreadId = threadId
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
+    const currentThreadId = threadId;
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
-      const isTeam = sourceType === "team"
+      const isTeam = sourceType === "team";
       const apiBase = isTeam
         ? `/api/v1/chat-team/${selectedTeamId}`
-        : `/api/v1/chat/${selectedAgentConfigId}`
+        : `/api/v1/chat/${selectedAgentConfigId}`;
 
       const threadMetadata = isTeam
         ? { teamId: selectedTeamId }
-        : { agentConfigId: selectedAgentConfigId }
+        : { agentConfigId: selectedAgentConfigId };
 
       if (mode === "generate") {
         const res = await fetch(`${apiBase}/generate`, {
@@ -267,26 +340,31 @@ export function ChatPage() {
             messages: requestMessages,
             threadId,
             resourceId,
-            threadTitle: messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
+            threadTitle:
+              messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
             threadMetadata,
           }),
         });
 
-        if (!res.ok) throw new Error(await getErrorMessage(res))
+        if (!res.ok) throw new Error(await getErrorMessage(res));
 
-        const payload = (await res.json()) as ApiEnvelope<GenerateResponse> | GenerateResponse
-        const data = isGenerateResponseEnvelope(payload) ? payload.data : payload
-        const text: string = data.text ?? JSON.stringify(data)
+        const payload = (await res.json()) as
+          | ApiEnvelope<GenerateResponse>
+          | GenerateResponse;
+        const data = isGenerateResponseEnvelope(payload)
+          ? payload.data
+          : payload;
+        const text: string = data.text ?? JSON.stringify(data);
         setMessages((prev) =>
-          prev.map((m) => (
+          prev.map((m) =>
             m.id === assistantMsg.id
               ? {
                   ...m,
                   content: text,
                   ...(data.traceId ? { traceId: data.traceId } : {}),
                 }
-              : m
-          ))
+              : m,
+          ),
         );
       } else {
         const res = await fetch(`${apiBase}/stream`, {
@@ -297,21 +375,23 @@ export function ChatPage() {
             messages: requestMessages,
             threadId,
             resourceId,
-            threadTitle: messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
+            threadTitle:
+              messages.length === 0 ? userMsg.content.slice(0, 80) : undefined,
             threadMetadata,
           }),
         });
 
-        if (!res.ok) throw new Error(await getErrorMessage(res))
-        if (!res.body) throw new Error("Stream response body is missing")
-        const responseTraceId = res.headers.get("X-Mastra-Trace-Id") ?? undefined
+        if (!res.ok) throw new Error(await getErrorMessage(res));
+        if (!res.body) throw new Error("Stream response body is missing");
+        const responseTraceId =
+          res.headers.get("X-Mastra-Trace-Id") ?? undefined;
 
         if (responseTraceId) {
           setMessages((prev) =>
-            prev.map((m) => (
-              m.id === assistantMsg.id ? { ...m, traceId: responseTraceId } : m
-            ))
-          )
+            prev.map((m) =>
+              m.id === assistantMsg.id ? { ...m, traceId: responseTraceId } : m,
+            ),
+          );
         }
 
         const reader = res.body.getReader();
@@ -325,49 +405,60 @@ export function ChatPage() {
           if (delta) {
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === assistantMsg.id ? { ...m, content: m.content + delta } : m
-              )
+                m.id === assistantMsg.id
+                  ? { ...m, content: m.content + delta }
+                  : m,
+              ),
             );
           }
         }
       }
 
-      setIsDraftThread(false)
-      const historyKey = isTeam ? "team-chat-history" : "chat-history"
+      setIsDraftThread(false);
+      const historyKey = isTeam ? "team-chat-history" : "chat-history";
       await queryClient.invalidateQueries({
         queryKey: [historyKey, selectedId, resourceId, "threads"],
-      })
+      });
       await queryClient.invalidateQueries({
-        queryKey: [historyKey, selectedId, resourceId, "threads", currentThreadId, "messages"],
-      })
+        queryKey: [
+          historyKey,
+          selectedId,
+          resourceId,
+          "threads",
+          currentThreadId,
+          "messages",
+        ],
+      });
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMsg.id && m.content === "" ? { ...m, content: "[Stopped]" } : m
-          )
-        )
-        return
+            m.id === assistantMsg.id && m.content === ""
+              ? { ...m, content: "[Stopped]" }
+              : m,
+          ),
+        );
+        return;
       }
 
       const errText = err instanceof Error ? err.message : "Error";
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === assistantMsg.id ? { ...m, content: `⚠️ ${errText}` } : m
-        )
+          m.id === assistantMsg.id ? { ...m, content: `⚠️ ${errText}` } : m,
+        ),
       );
     } finally {
-      abortControllerRef.current = null
+      abortControllerRef.current = null;
       setLoading(false);
-      setIsStopping(false)
+      setIsStopping(false);
     }
   }
 
   function stopMessage() {
-    if (!abortControllerRef.current || isStopping) return
+    if (!abortControllerRef.current || isStopping) return;
 
-    setIsStopping(true)
-    abortControllerRef.current.abort()
+    setIsStopping(true);
+    abortControllerRef.current.abort();
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -377,12 +468,16 @@ export function ChatPage() {
     }
   }
 
-  const isLoadingSource = sourceType === "agent" ? isLoadingAgentConfigs : isLoadingTeams
-  const hasNoSource = sourceType === "agent" ? activeAgentConfigs.length === 0 : activeTeams.length === 0
+  const isLoadingSource =
+    sourceType === "agent" ? isLoadingAgentConfigs : isLoadingTeams;
+  const hasNoSource =
+    sourceType === "agent"
+      ? activeAgentConfigs.length === 0
+      : activeTeams.length === 0;
   const traceTree = useMemo<TraceTreeNode[]>(() => {
-    if (!activeTrace) return []
+    if (!activeTrace) return [];
 
-    const nodeMap = new Map<string, TraceTreeNode>()
+    const nodeMap = new Map<string, TraceTreeNode>();
     for (const span of activeTrace.spans) {
       nodeMap.set(span.spanId, {
         id: span.spanId,
@@ -391,34 +486,36 @@ export function ChatPage() {
         status: span.status,
         durationMs: span.durationMs,
         children: [],
-      })
+      });
     }
 
-    const roots: TraceTreeNode[] = []
+    const roots: TraceTreeNode[] = [];
     for (const span of activeTrace.spans) {
-      const node = nodeMap.get(span.spanId)
-      if (!node) continue
+      const node = nodeMap.get(span.spanId);
+      if (!node) continue;
 
       if (span.parentSpanId) {
-        const parent = nodeMap.get(span.parentSpanId)
+        const parent = nodeMap.get(span.parentSpanId);
         if (parent) {
-          parent.children.push(node)
-          continue
+          parent.children.push(node);
+          continue;
         }
       }
 
-      roots.push(node)
+      roots.push(node);
     }
 
-    return roots
-  }, [activeTrace])
+    return roots;
+  }, [activeTrace]);
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
       <div className="flex flex-col gap-3 p-3 border-b bg-muted/30 md:flex-row md:items-center md:justify-between">
         {/* Mode toggle */}
         <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground mr-2">{t("chatMode")}:</span>
+          <span className="text-xs text-muted-foreground mr-2">
+            {t("chatMode")}:
+          </span>
           {(["generate", "stream"] as Mode[]).map((m) => (
             <button
               key={m}
@@ -427,7 +524,7 @@ export function ChatPage() {
                 "px-3 py-1 rounded-full text-xs font-medium transition-colors",
                 mode === m
                   ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted"
+                  : "bg-background text-muted-foreground hover:bg-muted",
               )}
             >
               {m === "generate" ? t("chatGenerate") : t("chatStream")}
@@ -446,7 +543,7 @@ export function ChatPage() {
                   "px-2.5 py-1 text-xs font-medium transition-colors",
                   sourceType === s
                     ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted"
+                    : "bg-background text-muted-foreground hover:bg-muted",
                 )}
               >
                 {s === "agent" ? "Agent" : "Team"}
@@ -457,7 +554,11 @@ export function ChatPage() {
           {sourceType === "agent" ? (
             <NativeSelect
               value={selectedAgentConfigId}
-              disabled={loading || isLoadingAgentConfigs || activeAgentConfigs.length === 0}
+              disabled={
+                loading ||
+                isLoadingAgentConfigs ||
+                activeAgentConfigs.length === 0
+              }
               onChange={(e) => handleAgentChange(e.target.value)}
             >
               <option value="" disabled>
@@ -468,7 +569,9 @@ export function ChatPage() {
                     : "Select agent"}
               </option>
               {activeAgentConfigs.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
               ))}
             </NativeSelect>
           ) : (
@@ -485,7 +588,9 @@ export function ChatPage() {
                     : "Select team"}
               </option>
               {activeTeams.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
               ))}
             </NativeSelect>
           )}
@@ -493,13 +598,15 @@ export function ChatPage() {
 
         {/* Thread history */}
         <div className="flex items-center gap-2 md:min-w-72">
-          <span className="text-xs text-muted-foreground shrink-0">History:</span>
+          <span className="text-xs text-muted-foreground shrink-0">
+            History:
+          </span>
           <NativeSelect
             value={threadId}
             disabled={loading}
             onChange={(e) => {
-              setThreadId(e.target.value)
-              setIsDraftThread(false)
+              setThreadId(e.target.value);
+              setIsDraftThread(false);
             }}
           >
             {threads.length === 0 ? (
@@ -529,20 +636,32 @@ export function ChatPage() {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={cn("flex items-start gap-3", msg.role === "user" && "flex-row-reverse")}
+            className={cn(
+              "flex items-start gap-3",
+              msg.role === "user" && "flex-row-reverse",
+            )}
           >
             <div
               className={cn(
                 "shrink-0 size-8 rounded-full flex items-center justify-center",
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+                  : "bg-muted text-muted-foreground",
               )}
             >
-              {msg.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
+              {msg.role === "user" ? (
+                <User className="size-4" />
+              ) : (
+                <Bot className="size-4" />
+              )}
             </div>
 
-            <div className={cn("max-w-[75%]", msg.role === "user" && "flex flex-col items-end")}>
+            <div
+              className={cn(
+                "max-w-[75%]",
+                msg.role === "user" && "flex flex-col items-end",
+              )}
+            >
               {msg.role === "assistant" && msg.traceId ? (
                 <Button
                   type="button"
@@ -558,48 +677,36 @@ export function ChatPage() {
 
               <div
                 className={cn(
-                  "rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words",
+                  "rounded-2xl px-4 py-2.5 text-sm break-words",
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-tr-sm"
-                    : "bg-muted text-foreground rounded-tl-sm"
+                    ? "bg-primary text-primary-foreground rounded-tr-sm whitespace-pre-wrap"
+                    : "bg-muted text-foreground rounded-tl-sm",
                 )}
               >
                 {msg.content === "" && msg.role === "assistant" ? (
                   <Loader2 className="size-4 animate-spin opacity-50" />
                 ) : msg.role === "assistant" ? (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      ol: ({ children }) => <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>,
-                      ul: ({ children }) => <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>,
-                      li: ({ children }) => <li>{children}</li>,
-                      h1: ({ children }) => <h1 className="mb-2 text-base font-semibold last:mb-0">{children}</h1>,
-                      h2: ({ children }) => <h2 className="mb-2 text-[15px] font-semibold last:mb-0">{children}</h2>,
-                      h3: ({ children }) => <h3 className="mb-2 text-sm font-semibold last:mb-0">{children}</h3>,
-                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                      code: ({ children }) => (
-                        <code className="rounded bg-background/70 px-1 py-0.5 text-[0.9em]">{children}</code>
-                      ),
-                      pre: ({ children }) => (
-                        <pre className="mb-2 overflow-x-auto rounded-lg bg-background/80 p-3 text-xs last:mb-0">{children}</pre>
-                      ),
-                      a: ({ children, href }) => (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary underline underline-offset-2"
-                        >
-                          {children}
-                        </a>
-                      ),
-                    }}
+                  <Streamdown
+                    className="text-sm"
+                    mode={
+                      loading && msg.id === messages[messages.length - 1]?.id
+                        ? "streaming"
+                        : "static"
+                    }
+                    isAnimating={
+                      loading &&
+                      msg.role === "assistant" &&
+                      msg.id === messages[messages.length - 1]?.id
+                    }
+                    caret="block"
+                    plugins={{ code }}
+                    controls={{ code: { copy: true, download: true } }}
+                    components={streamdownComponents}
                   >
-                    {formatDisplayedMessage(msg.content)}
-                  </ReactMarkdown>
+                    {normalizeMessageContent(msg.content)}
+                  </Streamdown>
                 ) : (
-                  formatDisplayedMessage(msg.content)
+                  normalizeMessageContent(msg.content)
                 )}
               </div>
             </div>
@@ -628,7 +735,11 @@ export function ChatPage() {
             variant={loading ? "outline" : "default"}
           >
             {loading ? (
-              isStopping ? <Loader2 className="size-4 animate-spin" /> : <Square className="size-4 fill-current" />
+              isStopping ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Square className="size-4 fill-current" />
+              )
             ) : (
               <SendHorizonal className="size-4" />
             )}
@@ -639,7 +750,10 @@ export function ChatPage() {
         </p>
       </div>
 
-      <Sheet open={Boolean(activeTraceId)} onOpenChange={(open) => !open && setActiveTraceId("")}>
+      <Sheet
+        open={Boolean(activeTraceId)}
+        onOpenChange={(open) => !open && setActiveTraceId("")}
+      >
         <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
             <SheetTitle>Trace graph</SheetTitle>
@@ -674,11 +788,19 @@ export function ChatPage() {
   );
 }
 
-function isGenerateResponseEnvelope(value: ApiEnvelope<GenerateResponse> | GenerateResponse): value is ApiEnvelope<GenerateResponse> {
-  return typeof value === "object" && value !== null && "data" in value
+function isGenerateResponseEnvelope(
+  value: ApiEnvelope<GenerateResponse> | GenerateResponse,
+): value is ApiEnvelope<GenerateResponse> {
+  return typeof value === "object" && value !== null && "data" in value;
 }
 
-function TraceNodeView({ node, depth }: { node: TraceTreeNode; depth: number }) {
+function TraceNodeView({
+  node,
+  depth,
+}: {
+  node: TraceTreeNode;
+  depth: number;
+}) {
   return (
     <div className="space-y-2">
       <div
@@ -701,7 +823,9 @@ function TraceNodeView({ node, depth }: { node: TraceTreeNode; depth: number }) 
             {node.status}
           </span>
           {typeof node.durationMs === "number" ? (
-            <span className="text-[11px] text-muted-foreground">{node.durationMs} ms</span>
+            <span className="text-[11px] text-muted-foreground">
+              {node.durationMs} ms
+            </span>
           ) : null}
         </div>
       </div>
@@ -710,5 +834,5 @@ function TraceNodeView({ node, depth }: { node: TraceTreeNode; depth: number }) 
         <TraceNodeView key={child.id} node={child} depth={depth + 1} />
       ))}
     </div>
-  )
+  );
 }
