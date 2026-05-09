@@ -37,7 +37,10 @@ export function AppShell({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-sidebar">
+      <SidebarInset
+        className="bg-[#f5f6fa] dark:bg-[#141526] md:bg-sidebar"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <header className="sticky top-0 z-20 hidden h-18 shrink-0 items-center justify-between gap-2 bg-sidebar md:flex">
           <div className="flex w-full items-center justify-between gap-3 px-5 py-4">
             <div className="flex items-center gap-2">
@@ -70,7 +73,7 @@ export function AppShell({
         </header>
         <div className="flex flex-1 flex-col overflow-hidden px-0">
           <div className="flex flex-1 flex-col overflow-auto rounded-none bg-app-main bg-cover bg-fixed bg-no-repeat lg:rounded-tl-2xl">
-            <div className="mx-auto flex w-full max-w-360 flex-1 flex-col gap-8 px-4 py-6 pb-22 md:px-7 md:py-7 md:pb-7">
+            <div className="mx-auto flex w-full max-w-360 flex-1 flex-col gap-8 px-4 py-6 pb-22 min-h-dvh md:min-h-0 md:px-7 md:py-7 md:pb-7">
               {children}
             </div>
           </div>

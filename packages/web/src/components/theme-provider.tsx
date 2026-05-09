@@ -1,8 +1,5 @@
 import * as React from "react";
-import {
-  ThemeProviderContext,
-  type Theme,
-} from "./theme-provider-context";
+import { ThemeProviderContext, type Theme } from "./theme-provider-context";
 
 type ResolvedTheme = "dark" | "light";
 
@@ -15,6 +12,10 @@ type ThemeProviderProps = {
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 const THEME_VALUES: Theme[] = ["dark", "light", "system"];
+const THEME_COLORS: Record<"dark" | "light", string> = {
+  light: "#2140bf",
+  dark: "#73294a",
+};
 
 function isTheme(value: string | null): value is Theme {
   return value !== null && THEME_VALUES.includes(value as Theme);
@@ -28,8 +29,8 @@ function disableTransitionsTemporarily() {
   const style = document.createElement("style");
   style.appendChild(
     document.createTextNode(
-      "*,*::before,*::after{-webkit-transition:none!important;transition:none!important}"
-    )
+      "*,*::before,*::after{-webkit-transition:none!important;transition:none!important}",
+    ),
   );
   document.head.appendChild(style);
 
@@ -59,7 +60,7 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, nextTheme);
       setThemeState(nextTheme);
     },
-    [storageKey]
+    [storageKey],
   );
 
   const applyTheme = React.useCallback(
@@ -74,8 +75,15 @@ export function ThemeProvider({
       root.classList.remove("light", "dark");
       root.classList.add(resolvedTheme);
       restoreTransitions?.();
+
+      const metaThemeColor = document.querySelector(
+        'meta[name="theme-color"]:not([media])',
+      );
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute("content", THEME_COLORS[resolvedTheme]);
+      }
     },
-    [disableTransitionOnChange]
+    [disableTransitionOnChange],
   );
 
   React.useEffect(() => {
@@ -97,7 +105,7 @@ export function ThemeProvider({
       theme,
       setTheme,
     }),
-    [setTheme, theme]
+    [setTheme, theme],
   );
 
   return (

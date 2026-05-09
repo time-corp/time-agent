@@ -28,34 +28,41 @@ export function MobileBottomNav() {
       : location.pathname === url || location.pathname.startsWith(`${url}/`);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-stretch border-t bg-sidebar md:hidden">
-      {NAV_ITEMS.map(({ titleKey, url, Icon }) => {
-        const active = isActive(url);
-        return (
-          <Link
-            key={url}
-            to={url}
-            className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors",
-              active ? "text-primary" : "text-muted-foreground",
-            )}
-          >
-            <Icon
-              weight={active ? "Bold" : "Outline"}
-              className="size-5 shrink-0"
-            />
-            <span>{t(titleKey)}</span>
-          </Link>
-        );
-      })}
-      <button
-        type="button"
-        onClick={() => setOpenMobile(true)}
-        className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors active:text-foreground"
-      >
-        <HamburgerMenu weight="Outline" className="size-5 shrink-0" />
-        <span>{t("common.more")}</span>
-      </button>
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 flex flex-col border-t bg-sidebar md:hidden"
+      style={{
+        paddingBottom: "calc(10px + min(env(safe-area-inset-bottom), 12px))",
+      }}
+    >
+      <div className="flex h-16 items-stretch">
+        {NAV_ITEMS.map(({ titleKey, url, Icon }) => {
+          const active = isActive(url);
+          return (
+            <Link
+              key={url}
+              to={url}
+              className={cn(
+                "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors",
+                active ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              <Icon
+                weight={active ? "Bold" : "Outline"}
+                className="size-5 shrink-0"
+              />
+              <span>{t(titleKey)}</span>
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setOpenMobile(true)}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors active:text-foreground"
+        >
+          <HamburgerMenu weight="Outline" className="size-5 shrink-0" />
+          <span>{t("common.more")}</span>
+        </button>
+      </div>
     </nav>
   );
 }
