@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as TerminalRouteImport } from './routes/terminal'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RealtimeRouteImport } from './routes/realtime'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as ModelsRouteImport } from './routes/models'
@@ -52,6 +53,11 @@ const ToolsRoute = ToolsRouteImport.update({
 const TerminalRoute = TerminalRouteImport.update({
   id: '/terminal',
   path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RealtimeRoute = RealtimeRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
   '/realtime': typeof RealtimeRoute
+  '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
   '/tools': typeof ToolsRoute
   '/users': typeof UsersRouteWithChildren
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/logs': typeof LogsRoute
   '/realtime': typeof RealtimeRoute
+  '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
   '/tools': typeof ToolsRoute
   '/agent-configs/create': typeof AgentConfigsCreateRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
   '/realtime': typeof RealtimeRoute
+  '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
   '/tools': typeof ToolsRoute
   '/users': typeof UsersRouteWithChildren
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/providers'
     | '/realtime'
+    | '/settings'
     | '/terminal'
     | '/tools'
     | '/users'
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/logs'
     | '/realtime'
+    | '/settings'
     | '/terminal'
     | '/tools'
     | '/agent-configs/create'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/providers'
     | '/realtime'
+    | '/settings'
     | '/terminal'
     | '/tools'
     | '/users'
@@ -376,6 +388,7 @@ export interface RootRouteChildren {
   ModelsRoute: typeof ModelsRouteWithChildren
   ProvidersRoute: typeof ProvidersRouteWithChildren
   RealtimeRoute: typeof RealtimeRoute
+  SettingsRoute: typeof SettingsRoute
   TerminalRoute: typeof TerminalRoute
   ToolsRoute: typeof ToolsRoute
   UsersRoute: typeof UsersRouteWithChildren
@@ -405,6 +418,13 @@ declare module '@tanstack/react-router' {
       path: '/terminal'
       fullPath: '/terminal'
       preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/realtime': {
@@ -678,6 +698,7 @@ const rootRouteChildren: RootRouteChildren = {
   ModelsRoute: ModelsRouteWithChildren,
   ProvidersRoute: ProvidersRouteWithChildren,
   RealtimeRoute: RealtimeRoute,
+  SettingsRoute: SettingsRoute,
   TerminalRoute: TerminalRoute,
   ToolsRoute: ToolsRoute,
   UsersRoute: UsersRouteWithChildren,

@@ -33,6 +33,17 @@
     "logs": "Nhật ký",
     "terminal": "Terminal",
     "agents": "Agents",
-    "more": "Thêm"
+    "more": "Thêm",
+    "settings": "Cài đặt"
+  },
+  "settings": {
+    "description": "Quản lý tuỳ chọn của bạn",
+    "appearance": "Giao diện",
+    "appearanceDesc": "Chọn cách hiển thị giao diện",
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
+    "themeSystem": "Hệ thống",
+    "language": "Ngôn ngữ",
+    "languageDesc": "Chọn ngôn ngữ ưa thích"
   }
 }
