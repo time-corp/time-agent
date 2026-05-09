@@ -42,6 +42,7 @@ const providerModelCatalog: Record<
   ],
   xai: [
     { name: "grok-4-1-fast-non-reasoning", label: "grok-4-1-fast-non-reasoning" },
+    { name: "grok-imagine-image-quality", label: "grok-imagine-image-quality" },
   ],
   groq: [
     { name: "openai/gpt-oss-120b", label: "openai/gpt-oss-120b" },

@@ -34,6 +34,7 @@ export function AgentConfigsEditPage({ agentConfigId }: { agentConfigId: string 
         payload: {
           name: values.name.trim(),
           description: values.description?.trim() ? values.description.trim() : null,
+          agentMode: values.agentMode,
           providerId: values.providerId,
           modelName: values.modelName.trim(),
           modelSource: values.modelSource,
@@ -102,6 +103,7 @@ export function AgentConfigsEditPage({ agentConfigId }: { agentConfigId: string 
               initialValues={{
                 name: agentConfig.name,
                 description: agentConfig.description ?? "",
+                agentMode: agentConfig.agentMode,
                 providerId: agentConfig.providerId,
                 modelName: agentConfig.modelName,
                 modelSource: agentConfig.modelSource,

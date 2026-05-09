@@ -1,11 +1,15 @@
 import { Hono } from "hono"
+import type { ChatAttachment } from "@time/shared"
 import { z } from "zod"
 import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
 import { createLogger } from "../../lib/logger"
 import { createRuntimeAgent } from "../../mastra/runtime-agent"
+import { createAgentMemory } from "../../mastra/memory"
 import { listChatMessages, listChatThreads } from "../../services/chat-history-service"
 import { getChatTrace } from "../../services/chat-trace-service"
+import { getAgentConfigById } from "../../services/agent-config-service"
+import { generateImageForAgent } from "../../services/image-generation-service"
 
 const log = createLogger("chat-route")
 
@@ -22,6 +26,20 @@ type ChatMemory = {
     resourceId: string
     title?: string
     metadata?: Record<string, unknown>
+  }): Promise<unknown>
+  saveMessages(args: {
+    messages: Array<{
+      id: string
+      role: "user" | "assistant"
+      createdAt: Date
+      threadId: string
+      resourceId: string
+      content: {
+        format: number
+        parts: Array<{ type: "text"; text: string }>
+        metadata?: { attachments?: ChatAttachment[] }
+      }
+    }>
   }): Promise<unknown>
 }
 
@@ -89,9 +107,46 @@ const createExecutionOptions = (input: {
           thread: input.threadId,
           resource: input.resourceId,
         },
-      }
+  }
     : {}),
 })
+
+const saveMessagesToMemory = async ({
+  memory,
+  threadId,
+  resourceId,
+  messages,
+}: {
+  memory: ChatMemory | null
+  threadId?: string
+  resourceId?: string
+  messages: Array<{
+    role: "user" | "assistant"
+    content: string
+    attachments?: ChatAttachment[]
+  }>
+}) => {
+  if (!memory || !threadId || !resourceId || messages.length === 0) {
+    return
+  }
+
+  await memory.saveMessages({
+    messages: messages.map((message) => ({
+      id: crypto.randomUUID(),
+      role: message.role,
+      createdAt: new Date(),
+      threadId,
+      resourceId,
+      content: {
+        format: 2,
+        parts: [{ type: "text", text: message.content }],
+        ...(message.attachments?.length
+          ? { metadata: { attachments: message.attachments } }
+          : {}),
+      },
+    })),
+  })
+}
 
 export const chatRoute = new Hono()
   .get("/:agentConfigId/threads", async (c) => {
@@ -142,9 +197,58 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
-    log.debug({ agentConfigId: c.req.param("agentConfigId"), messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "generate.request")
+    const agentConfigId = c.req.param("agentConfigId")
+    log.debug({ agentConfigId, messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "generate.request")
 
-    const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
+    const agentConfig = await getAgentConfigById(agentConfigId)
+
+    if (agentConfig.agentMode === "image_generate") {
+      const resolvedMemory = parsed.data.threadId && parsed.data.resourceId
+        ? (createAgentMemory(agentConfig.memoryConfig) as unknown as ChatMemory)
+        : null
+
+      await ensureThreadExists({
+        memory: resolvedMemory,
+        ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+        ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
+        ...(parsed.data.threadTitle ? { title: parsed.data.threadTitle } : {}),
+        ...(parsed.data.threadMetadata ? { metadata: parsed.data.threadMetadata } : {}),
+      })
+
+      const prompt = parsed.data.messages
+        .filter((message) => message.role === "user")
+        .map((message) => message.content.trim())
+        .filter(Boolean)
+        .join("\n\n")
+
+      if (!prompt) {
+        return fail(c, ErrorCode.VALIDATION_ERROR, "Image generation requires a user prompt", 400)
+      }
+
+      const result = await generateImageForAgent({
+        agentConfigId,
+        prompt,
+      })
+
+      await saveMessagesToMemory({
+        memory: resolvedMemory,
+        threadId: parsed.data.threadId,
+        resourceId: parsed.data.resourceId,
+        messages: [
+          ...parsed.data.messages,
+          {
+            role: "assistant",
+            content: result.text,
+            attachments: result.attachments,
+          },
+        ],
+      })
+
+      log.debug({ agentConfigId, attachmentCount: result.attachments.length }, "generate.image.result")
+      return ok(c, { text: result.text, attachments: result.attachments, traceId: null })
+    }
+
+    const { agent, modelSettings } = await createRuntimeAgent(agentConfigId)
     const memory = (await agent.getMemory()) ?? null
 
     await ensureThreadExists({
@@ -165,7 +269,7 @@ export const chatRoute = new Hono()
       }),
     })
 
-    log.debug({ agentConfigId: c.req.param("agentConfigId"), textPreview: result.text.slice(0, 300), finishReason: result.finishReason, usage: result.usage }, "generate.result")
+    log.debug({ agentConfigId, textPreview: result.text.slice(0, 300), finishReason: result.finishReason, usage: result.usage }, "generate.result")
 
     return ok(c, { text: result.text, traceId: result.traceId ?? null })
   })
@@ -176,9 +280,15 @@ export const chatRoute = new Hono()
       return fail(c, ErrorCode.VALIDATION_ERROR, message, 400)
     }
 
-    log.debug({ agentConfigId: c.req.param("agentConfigId"), messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "stream.request")
+    const agentConfigId = c.req.param("agentConfigId")
+    log.debug({ agentConfigId, messageCount: parsed.data.messages.length, threadId: parsed.data.threadId ?? null, resourceId: parsed.data.resourceId ?? null }, "stream.request")
 
-    const { agent, modelSettings } = await createRuntimeAgent(c.req.param("agentConfigId"))
+    const agentConfig = await getAgentConfigById(agentConfigId)
+    if (agentConfig.agentMode === "image_generate") {
+      return fail(c, ErrorCode.VALIDATION_ERROR, "Image generation agents support generate mode only", 422)
+    }
+
+    const { agent, modelSettings } = await createRuntimeAgent(agentConfigId)
     const memory = (await agent.getMemory()) ?? null
 
     await ensureThreadExists({
@@ -210,10 +320,10 @@ export const chatRoute = new Hono()
       result.text,
     ])
       .then(([finishReason, usage, warnings, response, providerMetadata, text]) => {
-        log.debug({ agentConfigId: c.req.param("agentConfigId"), textPreview: text.slice(0, 300), finishReason, usage }, "stream.result")
+        log.debug({ agentConfigId, textPreview: text.slice(0, 300), finishReason, usage }, "stream.result")
       })
       .catch((error) => {
-        log.error({ agentConfigId: c.req.param("agentConfigId"), error }, "stream.result.error")
+        log.error({ agentConfigId, error }, "stream.result.error")
       })
 
     const stream = new ReadableStream<Uint8Array>({

@@ -22,6 +22,7 @@ export function AgentConfigsCreatePage() {
       const agentConfig = await createMutation.mutateAsync({
         name: values.name.trim(),
         description: values.description?.trim() ? values.description.trim() : null,
+        agentMode: values.agentMode,
         providerId: values.providerId,
         modelName: values.modelName.trim(),
         modelSource: values.modelSource,
@@ -61,7 +62,7 @@ export function AgentConfigsCreatePage() {
 
       <SectionCard contentClassName="flex flex-col gap-6">
         <p className="text-sm text-muted-foreground">
-          Agent configs now choose a provider first, then a catalog model or a custom model name.
+          Agent configs now choose a mode first, then bind to a provider and catalog model or custom model name.
         </p>
         <AgentConfigForm
           mode="create"

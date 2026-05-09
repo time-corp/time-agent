@@ -6,7 +6,7 @@ import { createLogger } from "../lib/logger"
 import { attachTraceIdsToMessages } from "./chat-trace-service"
 
 const log = createLogger("team-chat-history")
-import { extractMessageText } from "./mastra-message-service"
+import { extractMessageAttachments, extractMessageText } from "./mastra-message-service"
 
 const toIsoString = (value: Date | string | null | undefined) => {
   if (!value) return new Date(0).toISOString()
@@ -106,10 +106,11 @@ export const listTeamChatMessages = async (
         id: message.id,
         role: message.role,
         content: normalizedContent,
+        attachments: extractMessageAttachments(message),
         createdAt: toIsoString(message.createdAt),
       }
     })
-    .filter((message) => message.content.length > 0)
+    .filter((message) => message.content.length > 0 || (message.attachments?.length ?? 0) > 0)
 
   return attachTraceIdsToMessages(messages, threadId, resourceId)
 }

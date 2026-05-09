@@ -1,4 +1,5 @@
 export {
+  agentModeSchema,
   agentConfigSchema,
   createAgentConfigSchema,
   updateAgentConfigSchema,
@@ -27,12 +28,16 @@ export {
   createSkillSchema,
 } from "./skill";
 export {
+  chatAttachmentSchema,
   chatHistoryThreadSchema,
   chatHistoryMessageSchema,
+  chatResponseSchema,
 } from "./chat-history";
 export type {
+  ChatAttachment,
   ChatHistoryThread,
   ChatHistoryMessage,
+  ChatResponse,
 } from "./chat-history";
 export {
   chatTraceSchema,

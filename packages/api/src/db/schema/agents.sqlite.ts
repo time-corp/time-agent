@@ -1,6 +1,7 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import {
   AGENT_DESCRIPTION_MAX_LENGTH,
+  AGENT_MODE_MAX_LENGTH,
   AGENT_NAME_MAX_LENGTH,
   CONFIG_JSON_MAX_LENGTH,
   ID_MAX_LENGTH,
@@ -15,6 +16,7 @@ export const agents = sqliteTable("agents", {
   id: text("id", { length: ID_MAX_LENGTH }).primaryKey(),
   name: text("name", { length: AGENT_NAME_MAX_LENGTH }).notNull(),
   description: text("description", { length: AGENT_DESCRIPTION_MAX_LENGTH }),
+  agentMode: text("agent_mode", { length: AGENT_MODE_MAX_LENGTH }).notNull().default("text"),
   providerId: text("provider_id", { length: ID_MAX_LENGTH })
     .notNull()
     .references(() => providers.id),

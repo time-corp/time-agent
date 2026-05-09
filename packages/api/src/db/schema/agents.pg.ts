@@ -1,6 +1,7 @@
 import { boolean, pgTable, varchar } from "drizzle-orm/pg-core"
 import {
   AGENT_DESCRIPTION_MAX_LENGTH,
+  AGENT_MODE_MAX_LENGTH,
   AGENT_NAME_MAX_LENGTH,
   CONFIG_JSON_MAX_LENGTH,
   ID_MAX_LENGTH,
@@ -16,6 +17,7 @@ export const agents = pgTable("agents", {
   id: varchar("id", { length: ID_MAX_LENGTH }).primaryKey(),
   name: varchar("name", { length: AGENT_NAME_MAX_LENGTH }).notNull(),
   description: varchar("description", { length: AGENT_DESCRIPTION_MAX_LENGTH }),
+  agentMode: varchar("agent_mode", { length: AGENT_MODE_MAX_LENGTH }).notNull().default("text"),
   providerId: varchar("provider_id", { length: ID_MAX_LENGTH })
     .notNull()
     .references(() => providers.id),

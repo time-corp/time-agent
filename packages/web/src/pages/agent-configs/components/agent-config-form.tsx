@@ -24,6 +24,7 @@ type AgentConfigFormProps = {
 const emptyValues: AgentConfigFormValues = {
   name: "",
   description: "",
+  agentMode: "text",
   providerId: "",
   modelName: "",
   modelSource: "catalog",
@@ -76,6 +77,30 @@ export function AgentConfigForm({
           control={form.control}
           label="Description"
           placeholder="Writes long-form content"
+        />
+
+        <Controller
+          name="agentMode"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="agent-mode">Mode</FieldLabel>
+              <NativeSelect
+                id="agent-mode"
+                value={field.value}
+                disabled={pending}
+                aria-invalid={fieldState.invalid}
+                onChange={(event) => field.onChange(event.target.value)}
+              >
+                <option value="text">Text</option>
+                <option value="image_generate">Image generate</option>
+              </NativeSelect>
+              <FieldDescription>
+                Text agents use the current Mastra chat flow. Image agents call the dedicated image generation service.
+              </FieldDescription>
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
         />
 
         <Controller

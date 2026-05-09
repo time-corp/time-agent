@@ -11,11 +11,13 @@ import { baseEntitySchema } from "./base"
 
 export const jsonObjectSchema = z.record(z.string(), z.unknown())
 export const modelSourceSchema = z.enum(["catalog", "custom"])
+export const agentModeSchema = z.enum(["text", "image_generate"])
 
 export const agentConfigSchema = baseEntitySchema.extend({
   id: z.string().min(1).max(ID_MAX_LENGTH),
   name: z.string().min(1).max(AGENT_NAME_MAX_LENGTH),
   description: z.string().max(AGENT_DESCRIPTION_MAX_LENGTH).nullable(),
+  agentMode: agentModeSchema,
   providerId: z.string().min(1).max(ID_MAX_LENGTH),
   modelName: z.string().min(1).max(MODEL_NAME_MAX_LENGTH),
   modelSource: modelSourceSchema,
@@ -34,6 +36,7 @@ export const createAgentConfigSchema = z.object({
     .max(AGENT_DESCRIPTION_MAX_LENGTH)
     .nullish()
     .transform((value) => value ?? null),
+  agentMode: agentModeSchema.default("text"),
   providerId: z.string().min(1).max(ID_MAX_LENGTH),
   modelName: z.string().min(1).max(MODEL_NAME_MAX_LENGTH),
   modelSource: modelSourceSchema.default("catalog"),
@@ -53,6 +56,7 @@ export const updateAgentConfigSchema = z.object({
     .nullish()
     .transform((value) => value ?? null)
     .optional(),
+  agentMode: agentModeSchema.optional(),
   providerId: z.string().min(1).max(ID_MAX_LENGTH).optional(),
   modelName: z.string().min(1).max(MODEL_NAME_MAX_LENGTH).optional(),
   modelSource: modelSourceSchema.optional(),
@@ -67,3 +71,4 @@ export const updateAgentConfigSchema = z.object({
 export type AgentConfig = z.infer<typeof agentConfigSchema>
 export type CreateAgentConfigInput = z.infer<typeof createAgentConfigSchema>
 export type UpdateAgentConfigInput = z.infer<typeof updateAgentConfigSchema>
+export type AgentMode = z.infer<typeof agentModeSchema>

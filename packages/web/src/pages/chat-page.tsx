@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import type { Components } from "streamdown";
+import type { ChatAttachment, ChatResponse } from "@time/shared";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
 import { useAgentTeamsQuery } from "@/hooks/useAgentTeams";
 import {
@@ -42,12 +43,8 @@ type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  attachments?: ChatAttachment[];
   traceId?: string;
-};
-
-type GenerateResponse = {
-  text: string;
-  traceId?: string | null;
 };
 
 type ApiEnvelope<T> = {
@@ -98,6 +95,14 @@ const streamdownComponents: Components = {
     >
       {children}
     </a>
+  ),
+  img: ({ alt, src }) => (
+    <img
+      alt={alt ?? ""}
+      src={src}
+      loading="lazy"
+      className="my-3 w-full max-w-xl rounded-xl border object-cover shadow-sm"
+    />
   ),
 };
 
@@ -182,6 +187,14 @@ export function ChatPage() {
     () => agentConfigs.filter((a) => a.isActive),
     [agentConfigs],
   );
+  const selectedAgentConfig = useMemo(
+    () =>
+      sourceType === "agent"
+        ? activeAgentConfigs.find((agent) => agent.id === selectedAgentConfigId)
+        : undefined,
+    [activeAgentConfigs, selectedAgentConfigId, sourceType],
+  );
+  const isImageAgent = selectedAgentConfig?.agentMode === "image_generate";
   const activeTeams = useMemo(
     () => agentTeams.filter((team) => team.isActive),
     [agentTeams],
@@ -257,6 +270,12 @@ export function ChatPage() {
   }
 
   useEffect(() => {
+    if (isImageAgent && mode === "stream") {
+      setMode("generate");
+    }
+  }, [isImageAgent, mode]);
+
+  useEffect(() => {
     if (!selectedAgentConfigId && activeAgentConfigs[0]?.id) {
       setSelectedAgentConfigId(activeAgentConfigs[0].id);
       resetChat();
@@ -291,6 +310,9 @@ export function ChatPage() {
         id: message.id,
         role: message.role === "system" ? "assistant" : message.role,
         content: message.content,
+        ...(message.attachments?.length
+          ? { attachments: message.attachments }
+          : {}),
         ...(message.traceId ? { traceId: message.traceId } : {}),
       })),
     );
@@ -349,8 +371,8 @@ export function ChatPage() {
         if (!res.ok) throw new Error(await getErrorMessage(res));
 
         const payload = (await res.json()) as
-          | ApiEnvelope<GenerateResponse>
-          | GenerateResponse;
+          | ApiEnvelope<ChatResponse>
+          | ChatResponse;
         const data = isGenerateResponseEnvelope(payload)
           ? payload.data
           : payload;
@@ -358,11 +380,14 @@ export function ChatPage() {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMsg.id
-              ? {
-                  ...m,
-                  content: text,
-                  ...(data.traceId ? { traceId: data.traceId } : {}),
-                }
+                ? {
+                    ...m,
+                    content: text,
+                    ...(data.attachments?.length
+                      ? { attachments: data.attachments }
+                      : {}),
+                    ...(data.traceId ? { traceId: data.traceId } : {}),
+                  }
               : m,
           ),
         );
@@ -519,9 +544,10 @@ export function ChatPage() {
           {(["generate", "stream"] as Mode[]).map((m) => (
             <button
               key={m}
-              onClick={() => setMode(m)}
-              className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+            onClick={() => setMode(m)}
+            disabled={m === "stream" && isImageAgent}
+            className={cn(
+                "px-3 py-1 rounded-full text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                 mode === m
                   ? "bg-primary text-primary-foreground"
                   : "bg-background text-muted-foreground hover:bg-muted",
@@ -686,25 +712,40 @@ export function ChatPage() {
                 {msg.content === "" && msg.role === "assistant" ? (
                   <Loader2 className="size-4 animate-spin opacity-50" />
                 ) : msg.role === "assistant" ? (
-                  <Streamdown
-                    className="text-sm"
-                    mode={
-                      loading && msg.id === messages[messages.length - 1]?.id
-                        ? "streaming"
-                        : "static"
-                    }
-                    isAnimating={
-                      loading &&
-                      msg.role === "assistant" &&
-                      msg.id === messages[messages.length - 1]?.id
-                    }
-                    caret="block"
-                    plugins={{ code }}
-                    controls={{ code: { copy: true, download: true } }}
-                    components={streamdownComponents}
-                  >
-                    {normalizeMessageContent(msg.content)}
-                  </Streamdown>
+                  <div className="space-y-3">
+                    {msg.content ? (
+                      <Streamdown
+                        className="text-sm"
+                        mode={
+                          loading && msg.id === messages[messages.length - 1]?.id
+                            ? "streaming"
+                            : "static"
+                        }
+                        isAnimating={
+                          loading &&
+                          msg.role === "assistant" &&
+                          msg.id === messages[messages.length - 1]?.id
+                        }
+                        caret="block"
+                        plugins={{ code }}
+                        controls={{ code: { copy: true, download: true } }}
+                        components={streamdownComponents}
+                      >
+                        {normalizeMessageContent(msg.content)}
+                      </Streamdown>
+                    ) : null}
+                    {msg.attachments?.map((attachment, index) =>
+                      attachment.type === "image" ? (
+                        <img
+                          key={`${msg.id}-${attachment.url}-${index}`}
+                          src={attachment.url}
+                          alt={`Generated image ${index + 1}`}
+                          loading="lazy"
+                          className="w-full max-w-xl rounded-xl border object-cover shadow-sm"
+                        />
+                      ) : null,
+                    )}
+                  </div>
                 ) : (
                   normalizeMessageContent(msg.content)
                 )}
@@ -789,8 +830,8 @@ export function ChatPage() {
 }
 
 function isGenerateResponseEnvelope(
-  value: ApiEnvelope<GenerateResponse> | GenerateResponse,
-): value is ApiEnvelope<GenerateResponse> {
+  value: ApiEnvelope<ChatResponse> | ChatResponse,
+): value is ApiEnvelope<ChatResponse> {
   return typeof value === "object" && value !== null && "data" in value;
 }
 

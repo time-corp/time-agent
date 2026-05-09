@@ -3,7 +3,7 @@ import { createAgentMemory } from "../mastra/memory";
 import { AppError, ErrorCode } from "../lib/errors";
 import { getAgentConfigById } from "./agent-config-service";
 import { attachTraceIdsToMessages } from "./chat-trace-service";
-import { extractMessageText } from "./mastra-message-service";
+import { extractMessageAttachments, extractMessageText } from "./mastra-message-service";
 
 const toIsoString = (value: Date | string | null | undefined) => {
   if (!value) {
@@ -69,9 +69,10 @@ export const listChatMessages = async (
       id: message.id,
       role: message.role,
       content: extractMessageText(message),
+      attachments: extractMessageAttachments(message),
       createdAt: toIsoString(message.createdAt),
     }))
-    .filter((message) => message.content.length > 0);
+    .filter((message) => message.content.length > 0 || (message.attachments?.length ?? 0) > 0);
 
   return attachTraceIdsToMessages(messages, threadId, resourceId)
 };

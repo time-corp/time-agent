@@ -13,6 +13,7 @@ const jsonStringSchema = z.string().refine((value) => {
 export const createAgentConfigFormSchema = z.object({
   name: z.string().min(1),
   description: z.string().nullable().optional(),
+  agentMode: z.enum(["text", "image_generate"]),
   providerId: z.string().min(1),
   modelName: z.string().min(1),
   modelSource: z.enum(["catalog", "custom"]),
@@ -39,6 +40,7 @@ export const updateAgentConfigFormSchema = createAgentConfigFormSchema.partial()
 export type AgentConfigFormValues = {
   name: string
   description?: string | null
+  agentMode: "text" | "image_generate"
   providerId: string
   modelName: string
   modelSource: "catalog" | "custom"

@@ -69,6 +69,7 @@ const createSqliteDatabase = () => {
       id VARCHAR(128) PRIMARY KEY NOT NULL,
       name VARCHAR(120) NOT NULL,
       description VARCHAR(500),
+      agent_mode VARCHAR(32) NOT NULL DEFAULT 'text',
       provider_id VARCHAR(128) NOT NULL REFERENCES providers(id),
       model_name VARCHAR(200) NOT NULL,
       model_source VARCHAR(16) NOT NULL DEFAULT 'catalog',
@@ -207,6 +208,7 @@ const createSqliteDatabase = () => {
         id VARCHAR(128) PRIMARY KEY NOT NULL,
         name VARCHAR(120) NOT NULL,
         description VARCHAR(500),
+        agent_mode VARCHAR(32) NOT NULL DEFAULT 'text',
         provider_id VARCHAR(128) NOT NULL REFERENCES providers(id),
         model_name VARCHAR(200) NOT NULL,
         model_source VARCHAR(16) NOT NULL DEFAULT 'catalog',
@@ -229,6 +231,7 @@ const createSqliteDatabase = () => {
         id,
         name,
         description,
+        agent_mode,
         provider_id,
         model_name,
         model_source,
@@ -248,6 +251,7 @@ const createSqliteDatabase = () => {
         agents.id,
         agents.name,
         agents.description,
+        'text',
         models.provider_id,
         models.model_name,
         'catalog',
@@ -268,6 +272,12 @@ const createSqliteDatabase = () => {
 
     sqlite.exec("DROP TABLE agents;")
     sqlite.exec("ALTER TABLE agents_v2 RENAME TO agents;")
+  }
+
+  const currentAgentColumns = sqlite.query("PRAGMA table_info(agents)").all() as Array<{ name: string }>
+
+  if (!currentAgentColumns.some((column) => column.name === "agent_mode")) {
+    sqlite.exec("ALTER TABLE agents ADD COLUMN agent_mode VARCHAR(32) NOT NULL DEFAULT 'text'")
   }
 
   const existingColumns = sqlite

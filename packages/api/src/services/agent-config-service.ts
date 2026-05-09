@@ -48,6 +48,7 @@ export const createAgentConfig = async (input: CreateAgentConfigInput) => {
       id: crypto.randomUUID(),
       name: input.name,
       description: input.description ?? null,
+      agentMode: input.agentMode ?? "text",
       providerId: input.providerId,
       modelName: input.modelName,
       modelSource: input.modelSource ?? "catalog",
@@ -82,6 +83,7 @@ export const updateAgentConfigById = async (id: string, input: UpdateAgentConfig
 
   if (input.name !== undefined) updates["name"] = input.name
   if (input.description !== undefined) updates["description"] = input.description
+  if (input.agentMode !== undefined) updates["agentMode"] = input.agentMode
   if (input.providerId !== undefined) updates["providerId"] = input.providerId
   if (input.modelName !== undefined) updates["modelName"] = input.modelName
   if (input.modelSource !== undefined) updates["modelSource"] = input.modelSource
