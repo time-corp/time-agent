@@ -4,6 +4,10 @@ import { db, schema } from "../db"
 import { AppError, ErrorCode } from "../lib/errors"
 
 const DEFAULT_XAI_BASE_URL = "https://api.x.ai/v1"
+const MOCK_IMAGE_GENERATION = process.env["MOCK_IMAGE_GENERATION"] === "true"
+const MOCK_IMAGE_URL =
+  process.env["MOCK_IMAGE_URL"] ??
+  "https://imgen.x.ai/xai-imgen/xai-tmp-imgen-6486e473-bca0-49f4-bdc4-ba53b1016fc2.jpeg"
 
 type XaiImageGenerationResponse = {
   data?: Array<{
@@ -46,6 +50,19 @@ export const generateImageForAgent = async ({
   agentConfigId: string
   prompt: string
 }): Promise<{ text: string; attachments: ChatAttachment[] }> => {
+  if (MOCK_IMAGE_GENERATION) {
+    return {
+      text: `Generated 1 image for: ${prompt}`,
+      attachments: [
+        {
+          type: "image",
+          url: MOCK_IMAGE_URL,
+          mimeType: "image/jpeg",
+        },
+      ],
+    }
+  }
+
   const [agentConfig] = await db
     .select()
     .from(schema.agents)
