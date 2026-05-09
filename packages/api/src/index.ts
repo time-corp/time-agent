@@ -74,14 +74,11 @@ void slackBotManager.init()
 void whatsappBotManager.init()
 
 if (serveWeb) {
+  // Immutable hashed assets
   app.get("/assets/*", async (c) => {
     const pathname = new URL(c.req.url).pathname;
     const file = Bun.file(`${staticRoot}${pathname}`);
-
-    if (!(await file.exists())) {
-      return c.notFound();
-    }
-
+    if (!(await file.exists())) return c.notFound();
     return new Response(file, {
       headers: {
         "Content-Type": file.type || "application/octet-stream",
@@ -90,32 +87,88 @@ if (serveWeb) {
     });
   });
 
+  // PWA icons & static images
+  app.get("/pwa/*", async (c) => {
+    const pathname = new URL(c.req.url).pathname;
+    const file = Bun.file(`${staticRoot}${pathname}`);
+    if (!(await file.exists())) return c.notFound();
+    return new Response(file, {
+      headers: {
+        "Content-Type": file.type || "image/png",
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  });
+
+  app.get("/images/*", async (c) => {
+    const pathname = new URL(c.req.url).pathname;
+    const file = Bun.file(`${staticRoot}${pathname}`);
+    if (!(await file.exists())) return c.notFound();
+    return new Response(file, {
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  });
+
+  // Service worker — must never be cached by browser or Cloudflare
+  app.get("/sw.js", async (c) => {
+    const file = Bun.file(`${staticRoot}/sw.js`);
+    if (!(await file.exists())) return c.notFound();
+    return new Response(file, {
+      headers: {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "CDN-Cache-Control": "no-store",
+        "Cloudflare-CDN-Cache-Control": "no-store",
+      },
+    });
+  });
+
+  // Workbox runtime (referenced by sw.js, needs to be accessible)
+  app.get("/workbox-*.js", async (c) => {
+    const pathname = new URL(c.req.url).pathname;
+    const file = Bun.file(`${staticRoot}${pathname}`);
+    if (!(await file.exists())) return c.notFound();
+    return new Response(file, {
+      headers: {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  });
+
+  // PWA manifest — short cache so updates propagate
+  app.get("/manifest.webmanifest", async (c) => {
+    const file = Bun.file(`${staticRoot}/manifest.webmanifest`);
+    if (!(await file.exists())) return c.notFound();
+    return new Response(file, {
+      headers: {
+        "Content-Type": "application/manifest+json",
+        "Cache-Control": "no-cache",
+      },
+    });
+  });
+
   app.get("/favicon.ico", async (c) => {
     const file = Bun.file(`${staticRoot}/favicon.ico`);
-
-    if (!(await file.exists())) {
-      return c.notFound();
-    }
-
+    if (!(await file.exists())) return c.notFound();
     return new Response(file);
   });
 
+  // SPA fallback
   app.get("*", async (c) => {
     const pathname = new URL(c.req.url).pathname;
-
-    if (pathname.startsWith("/api/")) {
-      return c.notFound();
-    }
-
+    if (pathname.startsWith("/api/")) return c.notFound();
     const indexFile = Bun.file(`${staticRoot}/index.html`);
-
     if (!(await indexFile.exists())) {
       return c.text(`index.html not found in ${staticRoot}`, 500);
     }
-
     return new Response(indexFile, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-cache",
       },
     });
   });

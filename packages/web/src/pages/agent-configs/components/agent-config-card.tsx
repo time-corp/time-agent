@@ -27,7 +27,7 @@ function avatarColor(name: string): string {
 
 type AgentConfigCardProps = {
   agentConfig: AgentConfig;
-  provider?: Provider;
+  provider?: Provider | undefined;
   onDelete: (id: string) => void;
 };
 

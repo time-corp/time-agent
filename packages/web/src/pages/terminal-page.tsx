@@ -31,6 +31,11 @@ export function TerminalPage() {
             </Button>
           </div>
         }
+        mobileAction={
+          <Button variant="outline" size="sm" onClick={handleConnect}>
+            {connected ? "Reconnect" : "Connect"}
+          </Button>
+        }
       />
       <div className="flex-1 rounded-3xl border border-border bg-[#0d1117] overflow-hidden shadow-panel">
         <XTerminal ref={terminalRef} onConnectionChange={setConnected} />

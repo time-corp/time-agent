@@ -23,7 +23,7 @@ function avatarColor(name: string): string {
 
 type AgentTeamCardProps = {
   team: AgentTeam;
-  leadAgentName?: string;
+  leadAgentName?: string | undefined;
   onDelete: (id: string) => void;
 };
 
