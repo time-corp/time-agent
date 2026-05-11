@@ -8,6 +8,8 @@ import {
   GitBranch,
   AlertCircle,
   Square,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Streamdown } from "streamdown";
@@ -174,6 +176,7 @@ export function ChatPage() {
   const [threadId, setThreadId] = useState<string>(() => crypto.randomUUID());
   const [isDraftThread, setIsDraftThread] = useState(true);
   const [activeTraceId, setActiveTraceId] = useState("");
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
@@ -695,19 +698,6 @@ export function ChatPage() {
                 msg.role === "user" && "flex flex-col items-end",
               )}
             >
-              {msg.role === "assistant" && msg.traceId ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="mb-1 h-7 px-2 text-[11px] text-muted-foreground"
-                  onClick={() => setActiveTraceId(msg.traceId ?? "")}
-                >
-                  <GitBranch className="mr-1 size-3.5" />
-                  Trace
-                </Button>
-              ) : null}
-
               <div
                 className={cn(
                   "rounded-2xl px-4 py-2.5 text-sm break-words",
@@ -777,6 +767,44 @@ export function ChatPage() {
                   normalizeMessageContent(msg.content)
                 )}
               </div>
+
+              {msg.role === "assistant" && (
+                <div className="mt-1 flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        normalizeMessageContent(msg.content),
+                      );
+                      setCopiedMsgId(msg.id);
+                      setTimeout(() => setCopiedMsgId(null), 2000);
+                    }}
+                  >
+                    {copiedMsgId === msg.id ? (
+                      <Check className="mr-1 size-3" />
+                    ) : (
+                      <Copy className="mr-1 size-3" />
+                    )}
+                    {copiedMsgId === msg.id ? "Copied" : "Copy"}
+                  </Button>
+
+                  {msg.traceId ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                      onClick={() => setActiveTraceId(msg.traceId ?? "")}
+                    >
+                      <GitBranch className="mr-1 size-3" />
+                      Trace
+                    </Button>
+                  ) : null}
+                </div>
+              )}
             </div>
           </div>
         ))}
