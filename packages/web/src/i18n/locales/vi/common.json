@@ -4,7 +4,10 @@
     "workspace": "Không gian làm việc"
   },
   "sidebar": {
-    "workspace": "Điều hướng"
+    "overview": "Tổng quan",
+    "workspace": "Không gian làm việc",
+    "agents": "Agent",
+    "system": "Hệ thống"
   },
   "common": {
     "home": "Trang chủ",

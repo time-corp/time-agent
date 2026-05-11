@@ -4,7 +4,10 @@
     "workspace": "Workspace"
   },
   "sidebar": {
-    "workspace": "Workspace"
+    "overview": "Overview",
+    "workspace": "Workspace",
+    "agents": "Agents",
+    "system": "System"
   },
   "common": {
     "home": "Home",

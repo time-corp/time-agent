@@ -38,10 +38,15 @@ function makeIcon(
 
 export const appSidebarSections: SidebarSection[] = [
   {
-    labelKey: "sidebar.workspace",
+    labelKey: "sidebar.overview",
     items: [
       { titleKey: "common.home", url: "/", icon: makeIcon(Home) },
       { titleKey: "common.chat", url: "/chat", icon: makeIcon(ChatSquare) },
+    ],
+  },
+  {
+    labelKey: "sidebar.workspace",
+    items: [
       {
         titleKey: "common.users",
         url: "/users",
@@ -53,6 +58,16 @@ export const appSidebarSections: SidebarSection[] = [
         icon: makeIcon(Server),
       },
       {
+        titleKey: "common.channels",
+        url: "/channels",
+        icon: makeIcon(Route),
+      },
+    ],
+  },
+  {
+    labelKey: "sidebar.agents",
+    items: [
+      {
         titleKey: "common.agentConfigs",
         url: "/agent-configs",
         icon: makeIcon(Widget),
@@ -62,7 +77,11 @@ export const appSidebarSections: SidebarSection[] = [
         url: "/agent-teams",
         icon: makeIcon(UsersGroupTwoRounded),
       },
-      { titleKey: "common.channels", url: "/channels", icon: makeIcon(Route) },
+    ],
+  },
+  {
+    labelKey: "sidebar.system",
+    items: [
       {
         titleKey: "common.builtInTools",
         url: "/tools",

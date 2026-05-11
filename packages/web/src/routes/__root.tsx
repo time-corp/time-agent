@@ -28,7 +28,7 @@ function getSidebarMatch(pathname: string) {
   }
 
   return {
-    sectionKey: "shell.workspace",
+    sectionKey: "sidebar.overview",
     titleKey: "common.home",
   };
 }
