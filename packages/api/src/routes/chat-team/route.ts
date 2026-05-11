@@ -278,61 +278,46 @@ export const chatTeamRoute = new Hono()
       throw err
     }
 
-    const fullReader = result.fullStream.getReader()
+    const reader = result.textStream.getReader()
     const encoder = new TextEncoder()
-    let textChunkCount = 0
+
+    void Promise.all([
+      result.finishReason,
+      result.usage,
+      result.warnings,
+      result.response,
+      result.providerMetadata,
+      result.text,
+    ])
+      .then(([finishReason, usage, warnings, response, providerMetadata, text]) => {
+        const normalized = parseStructuredChatResponse(text)
+        log.debug({
+          teamId,
+          textLength: normalized.text.length,
+          artifactCount: normalized.artifacts?.length ?? 0,
+          finishReason,
+          usage,
+          warnings,
+          hasResponse: Boolean(response),
+          hasProviderMetadata: Boolean(providerMetadata),
+        }, "stream.result")
+      })
+      .catch((error) => {
+        log.error({ teamId, error }, "stream.result.error")
+      })
 
     const stream = new ReadableStream<Uint8Array>({
       async pull(controller) {
         try {
-          while (true) {
-            const { done, value } = await fullReader.read()
-            if (done) {
-              log.debug({ textChunkCount }, "stream.done")
-              controller.close()
-              return
-            }
+          const { done, value } = await reader.read()
 
-            const chunk = value as
-              | { type: "text-delta"; text?: string; textDelta?: string }
-              | { type: "error"; error?: { message?: string } | string }
-              | { type: string }
-
-            if (chunk.type === "text-delta") {
-              const text =
-                ("text" in chunk && typeof chunk.text === "string" ? chunk.text : "") ||
-                ("textDelta" in chunk && typeof chunk.textDelta === "string" ? chunk.textDelta : "")
-
-              if (!text) {
-                continue
-              }
-
-              textChunkCount++
-              log.debug({ textChunkCount, chunkLength: text.length }, "stream.text-chunk")
-              controller.enqueue(encoder.encode(text))
-              return
-            }
-
-            if (chunk.type === "error") {
-              const chunkError = "error" in chunk ? chunk.error : undefined
-              const errorMessage =
-                typeof chunkError === "string"
-                  ? chunkError
-                  : chunkError?.message ?? "Agent stream failed"
-              const displayMessage = `[Error] ${errorMessage}`
-
-              log.error({ errorMessage }, "stream.model-error")
-              await saveAssistantErrorMessage({
-                memory,
-                ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
-                ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
-                text: displayMessage,
-              })
-              controller.enqueue(encoder.encode(`\n\n${displayMessage}`))
-              controller.close()
-              return
-            }
+          if (done) {
+            log.debug("stream.done")
+            controller.close()
+            return
           }
+
+          controller.enqueue(encoder.encode(value))
         }
         catch (error) {
           log.error({ error }, "stream.pull-error")
@@ -350,7 +335,7 @@ export const chatTeamRoute = new Hono()
       },
       async cancel(reason) {
         log.debug({ reason }, "stream.cancelled")
-        await fullReader.cancel(reason)
+        await reader.cancel(reason)
       },
     })
 
