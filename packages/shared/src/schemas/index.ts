@@ -58,12 +58,22 @@ export {
   createChannelSchema,
   updateChannelSchema,
 } from "./channel"
+export {
+  gatewayLoginSchema,
+  sessionUserSchema,
+  authSessionSchema,
+} from "./auth"
 export type {
   Channel,
   ChannelType,
   CreateChannelInput,
   UpdateChannelInput,
 } from "./channel"
+export type {
+  GatewayLoginInput,
+  SessionUser,
+  AuthSession,
+} from "./auth"
 export {
   agentTeamSchema,
   agentTeamMemberSchema,

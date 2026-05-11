@@ -24,8 +24,11 @@ import { providersRoute } from "./routes/providers/route"
 import { websocket } from "./routes/ws-server";
 import { terminalRoute } from "./routes/terminal/route";
 import { usersRoute } from "./routes/users/route";
+import { authRoute } from "./routes/auth/route";
 import { traceMiddleware } from "./middleware/trace";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { authSessionMiddleware, requireApiAuthMiddleware } from "./middleware/auth";
+import { bootstrapSystemGatewayAuth } from "./services/auth-service";
 
 const staticRoot = process.env["STATIC_ROOT"] ?? "/app/web-dist";
 const serveWeb = process.env["SERVE_WEB"] === "true";
@@ -33,9 +36,18 @@ const apiV1 = "/api/v1";
 
 const app = new Hono<{ Bindings: HonoBindings; Variables: HonoVariables }>()
   .use("*", logger())
-  .use("*", cors({ origin: process.env["WEB_URL"] ?? "http://localhost:5173" }))
+  .use(
+    "*",
+    cors({
+      origin: process.env["WEB_URL"] ?? "http://localhost:5173",
+      credentials: true,
+    }),
+  )
   .use("*", traceMiddleware)
   .route(`${apiV1}/health`, healthRoute)
+  .route(`${apiV1}/auth`, authRoute)
+  .use(`${apiV1}/*`, authSessionMiddleware)
+  .use(`${apiV1}/*`, requireApiAuthMiddleware)
   .route(`${apiV1}/terminal`, terminalRoute)
   .route(`${apiV1}/users`, usersRoute)
   .route(`${apiV1}/providers`, providersRoute)
@@ -56,6 +68,7 @@ const mastraServer = new MastraServer({
   prefix: apiV1,
 });
 
+await bootstrapSystemGatewayAuth();
 await mastraServer.init();
 
 // Register custom routes AFTER Mastra init to avoid Mastra's wildcard routes shadowing them

@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import type { ServerWebSocket, FileSink } from "bun";
 import path from "node:path";
 import { upgradeWebSocket } from "../ws-server";
+import { ErrorCode } from "../../lib/errors";
+import { fail } from "../../lib/response";
 
 type WS = ServerWebSocket<unknown>;
 
@@ -30,9 +32,13 @@ async function pipeOutput(proc: ReturnType<typeof Bun.spawn>, send: (data: strin
   }
 }
 
-export const terminalRoute = new Hono().get(
-  "/",
-  upgradeWebSocket(() => ({
+export const terminalRoute = new Hono().get("/", (c) => {
+  const authSession = c.get("authSession") as { authenticated?: boolean } | undefined;
+  if (!authSession?.authenticated) {
+    return fail(c, ErrorCode.AUTH_INVALID_CREDENTIALS, "Authentication required", 401);
+  }
+
+  return upgradeWebSocket(() => ({
     onOpen(_evt, ws) {
       const proc = Bun.spawn(["node", BRIDGE], {
         stdin: "pipe",
@@ -80,5 +86,5 @@ export const terminalRoute = new Hono().get(
         sessions.delete(ws.raw);
       }
     },
-  }))
-);
+  }))(c);
+});

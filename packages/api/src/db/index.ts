@@ -33,6 +33,38 @@ const createSqliteDatabase = () => {
   `);
 
   sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS gateway_credentials (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      user_id VARCHAR(128) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      label VARCHAR(100) NOT NULL,
+      token_hash VARCHAR(255) NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      last_used_at INTEGER,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(user_id)
+    );
+  `);
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      id VARCHAR(128) PRIMARY KEY NOT NULL,
+      user_id VARCHAR(128) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash VARCHAR(255) NOT NULL UNIQUE,
+      expires_at INTEGER NOT NULL,
+      last_seen_at INTEGER,
+      tenant_id VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      updated_by VARCHAR(128) NOT NULL DEFAULT 'system',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  sqlite.exec(`
     CREATE TABLE IF NOT EXISTS providers (
       id VARCHAR(128) PRIMARY KEY NOT NULL,
       name VARCHAR(100) NOT NULL,

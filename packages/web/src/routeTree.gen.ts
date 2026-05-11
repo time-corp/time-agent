@@ -16,6 +16,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as LogsRouteImport } from './routes/logs'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as AgentConfigsRouteImport } from './routes/agent-configs'
@@ -72,6 +73,11 @@ const ModelsRoute = ModelsRouteImport.update({
 const LogsRoute = LogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/agent-configs': typeof AgentConfigsRouteWithChildren
   '/channels': typeof ChannelsRouteWithChildren
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
@@ -221,6 +228,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/agent-configs': typeof AgentConfigsRouteWithChildren
   '/channels': typeof ChannelsRouteWithChildren
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/models': typeof ModelsRouteWithChildren
   '/providers': typeof ProvidersRouteWithChildren
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/agent-configs'
     | '/channels'
     | '/chat'
+    | '/login'
     | '/logs'
     | '/models'
     | '/providers'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/login'
     | '/logs'
     | '/settings'
     | '/terminal'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/agent-configs'
     | '/channels'
     | '/chat'
+    | '/login'
     | '/logs'
     | '/models'
     | '/providers'
@@ -372,6 +384,7 @@ export interface RootRouteChildren {
   AgentConfigsRoute: typeof AgentConfigsRouteWithChildren
   ChannelsRoute: typeof ChannelsRouteWithChildren
   ChatRoute: typeof ChatRoute
+  LoginRoute: typeof LoginRoute
   LogsRoute: typeof LogsRoute
   ModelsRoute: typeof ModelsRouteWithChildren
   ProvidersRoute: typeof ProvidersRouteWithChildren
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/logs'
       preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -674,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentConfigsRoute: AgentConfigsRouteWithChildren,
   ChannelsRoute: ChannelsRouteWithChildren,
   ChatRoute: ChatRoute,
+  LoginRoute: LoginRoute,
   LogsRoute: LogsRoute,
   ModelsRoute: ModelsRouteWithChildren,
   ProvidersRoute: ProvidersRouteWithChildren,

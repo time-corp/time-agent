@@ -12,7 +12,10 @@ const getErrorMessage = async (response: Response) => {
 }
 
 export const request = async <T>(input: RequestInfo | URL, init?: RequestInit) => {
-  const response = await fetch(input, init)
+  const response = await fetch(input, {
+    credentials: "same-origin",
+    ...init,
+  })
 
   if (!response.ok) {
     throw new Error(await getErrorMessage(response))

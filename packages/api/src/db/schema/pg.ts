@@ -1,4 +1,6 @@
 export * from "./users.pg"
+export * from "./gateway-credentials.pg"
+export * from "./auth-sessions.pg"
 export * from "./providers.pg"
 export * from "./agents.pg"
 export * from "./tools.pg"

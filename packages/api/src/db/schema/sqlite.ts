@@ -1,4 +1,6 @@
 export * from "./users.sqlite"
+export * from "./gateway-credentials.sqlite"
+export * from "./auth-sessions.sqlite"
 export * from "./providers.sqlite"
 export * from "./agents.sqlite"
 export * from "./tools.sqlite"
