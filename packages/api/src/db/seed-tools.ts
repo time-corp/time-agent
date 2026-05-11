@@ -25,6 +25,14 @@ const builtInTools = [
     defaultEnabled: true,
     requiresApproval: false,
   },
+  {
+    key: "generate_image",
+    name: "Generate Image",
+    description: "Generate images from a prompt using a configured image-generation agent",
+    category: "media",
+    defaultEnabled: false,
+    requiresApproval: false,
+  },
 ]
 
 const rows = builtInTools.map((tool) => ({

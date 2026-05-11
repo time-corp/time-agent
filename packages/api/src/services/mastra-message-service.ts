@@ -1,5 +1,6 @@
-import type { ChatAttachment } from "@time/shared"
+import type { ChatArtifact, ChatAttachment } from "@time/shared"
 import type { MastraDBMessage } from "@mastra/core/agent/message-list"
+import { normalizeChatArtifacts, parseStructuredChatResponse } from "./chat-response-service"
 
 const extractTextParts = (message: MastraDBMessage) =>
   message.content.parts
@@ -17,24 +18,27 @@ export const extractMessageText = (message: MastraDBMessage) => {
   return extractTextParts(message)
 }
 
-export const extractMessageAttachments = (message: MastraDBMessage): ChatAttachment[] => {
+export const extractMessageArtifacts = (message: MastraDBMessage): ChatArtifact[] => {
   const metadata = message.content.metadata
 
-  if (!metadata || typeof metadata !== "object" || !("attachments" in metadata)) {
-    return []
+  if (metadata && typeof metadata === "object") {
+    const normalized = normalizeChatArtifacts(
+      Array.isArray((metadata as { artifacts?: unknown }).artifacts)
+        ? ((metadata as { artifacts?: ChatArtifact[] }).artifacts ?? [])
+        : undefined,
+      Array.isArray((metadata as { attachments?: unknown }).attachments)
+        ? ((metadata as { attachments?: ChatAttachment[] }).attachments ?? [])
+        : undefined,
+    )
+
+    if (normalized.artifacts.length > 0) {
+      return normalized.artifacts
+    }
   }
 
-  const attachments = (metadata as { attachments?: unknown }).attachments
-  if (!Array.isArray(attachments)) {
-    return []
-  }
-
-  return attachments.filter(
-    (attachment): attachment is ChatAttachment =>
-      typeof attachment === "object" &&
-      attachment !== null &&
-      (attachment as { type?: unknown }).type === "image" &&
-      typeof (attachment as { url?: unknown }).url === "string" &&
-      typeof (attachment as { mimeType?: unknown }).mimeType === "string",
-  )
+  const parsed = parseStructuredChatResponse(extractMessageText(message))
+  return parsed.artifacts ?? []
 }
+
+export const extractMessageAttachments = (message: MastraDBMessage): ChatAttachment[] =>
+  normalizeChatArtifacts(extractMessageArtifacts(message)).attachments

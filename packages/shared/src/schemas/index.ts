@@ -28,12 +28,17 @@ export {
   createSkillSchema,
 } from "./skill";
 export {
+  chatArtifactSchema,
   chatAttachmentSchema,
+  chatFileArtifactSchema,
   chatHistoryThreadSchema,
   chatHistoryMessageSchema,
+  chatImageArtifactSchema,
+  chatLinkArtifactSchema,
   chatResponseSchema,
 } from "./chat-history";
 export type {
+  ChatArtifact,
   ChatAttachment,
   ChatHistoryThread,
   ChatHistoryMessage,

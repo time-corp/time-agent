@@ -1,6 +1,7 @@
 import type { Tool } from "@mastra/core/tools"
 import { agentBrowser } from "../browser"
 import { copyArtifactTool } from "./copy-artifact-tool"
+import { generateImageTool } from "./generate-image-tool"
 import { screenshotTool } from "./screenshot-tool"
 
 type AnyTool = Tool<any, any, any, any, any, any, any>
@@ -10,6 +11,7 @@ type ToolEntry = AnyTool | Record<string, AnyTool>
 // "browser" expands to all browser_* tools as a group
 const TOOL_REGISTRY: Record<string, ToolEntry> = {
   copy_artifact: copyArtifactTool,
+  generate_image: generateImageTool,
   take_screenshot: screenshotTool,
   browser: agentBrowser.getTools(),
 }

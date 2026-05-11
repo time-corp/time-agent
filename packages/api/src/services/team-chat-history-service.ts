@@ -4,9 +4,10 @@ import { createAgentMemory } from "../mastra/memory"
 import { AppError, ErrorCode } from "../lib/errors"
 import { createLogger } from "../lib/logger"
 import { attachTraceIdsToMessages } from "./chat-trace-service"
+import { parseStructuredChatResponse } from "./chat-response-service"
 
 const log = createLogger("team-chat-history")
-import { extractMessageAttachments, extractMessageText } from "./mastra-message-service"
+import { extractMessageArtifacts, extractMessageAttachments, extractMessageText } from "./mastra-message-service"
 
 const toIsoString = (value: Date | string | null | undefined) => {
   if (!value) return new Date(0).toISOString()
@@ -29,28 +30,12 @@ const normalizeTeamAssistantContent = (content: string) => {
   if (!content) return ""
   if (content.includes(COMPLETION_CHECK_MARKER)) return ""
 
-  if (!content.startsWith("{")) {
-    return content
-  }
-
   try {
-    const parsed = JSON.parse(content) as {
-      finalResult?: { text?: unknown }
-      text?: unknown
-    }
-
-    if (typeof parsed.finalResult?.text === "string" && parsed.finalResult.text.trim()) {
-      return parsed.finalResult.text.trim()
-    }
-
-    if (typeof parsed.text === "string" && parsed.text.trim()) {
-      return parsed.text.trim()
-    }
+    const { text } = parseStructuredChatResponse(content)
+    return text
   } catch {
     return content
   }
-
-  return content
 }
 
 // Teams use a shared default memory (no per-agent config needed)
@@ -106,11 +91,12 @@ export const listTeamChatMessages = async (
         id: message.id,
         role: message.role,
         content: normalizedContent,
+        artifacts: extractMessageArtifacts(message),
         attachments: extractMessageAttachments(message),
         createdAt: toIsoString(message.createdAt),
       }
     })
-    .filter((message) => message.content.length > 0 || (message.attachments?.length ?? 0) > 0)
+    .filter((message) => message.content.length > 0 || (message.artifacts?.length ?? 0) > 0)
 
   return attachTraceIdsToMessages(messages, threadId, resourceId)
 }

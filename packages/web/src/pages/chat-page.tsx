@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import type { Components } from "streamdown";
-import type { ChatAttachment, ChatResponse } from "@time/shared";
+import type { ChatArtifact, ChatAttachment, ChatResponse } from "@time/shared";
 import { useAgentConfigsQuery } from "@/hooks/useAgentConfigs";
 import { useAgentTeamsQuery } from "@/hooks/useAgentTeams";
 import {
@@ -43,6 +43,7 @@ type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  artifacts?: ChatArtifact[];
   attachments?: ChatAttachment[];
   traceId?: string;
 };
@@ -313,6 +314,9 @@ export function ChatPage() {
         ...(message.attachments?.length
           ? { attachments: message.attachments }
           : {}),
+        ...(message.artifacts?.length
+          ? { artifacts: message.artifacts }
+          : {}),
         ...(message.traceId ? { traceId: message.traceId } : {}),
       })),
     );
@@ -383,6 +387,9 @@ export function ChatPage() {
                 ? {
                     ...m,
                     content: text,
+                    ...(data.artifacts?.length
+                      ? { artifacts: data.artifacts }
+                      : {}),
                     ...(data.attachments?.length
                       ? { attachments: data.attachments }
                       : {}),
@@ -734,15 +741,35 @@ export function ChatPage() {
                         {normalizeMessageContent(msg.content)}
                       </Streamdown>
                     ) : null}
-                    {msg.attachments?.map((attachment, index) =>
-                      attachment.type === "image" ? (
+                    {(msg.artifacts ?? msg.attachments)?.map((artifact, index) =>
+                      artifact.type === "image" ? (
                         <img
-                          key={`${msg.id}-${attachment.url}-${index}`}
-                          src={attachment.url}
+                          key={`${msg.id}-${artifact.url}-${index}`}
+                          src={artifact.url}
                           alt={`Generated image ${index + 1}`}
                           loading="lazy"
                           className="w-full max-w-xl rounded-xl border object-cover shadow-sm"
                         />
+                      ) : artifact.type === "file" ? (
+                        <a
+                          key={`${msg.id}-${artifact.url}-${index}`}
+                          href={artifact.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex rounded-lg border bg-background px-3 py-2 text-sm underline underline-offset-2"
+                        >
+                          {artifact.name}
+                        </a>
+                      ) : artifact.type === "link" ? (
+                        <a
+                          key={`${msg.id}-${artifact.url}-${index}`}
+                          href={artifact.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex rounded-lg border bg-background px-3 py-2 text-sm underline underline-offset-2"
+                        >
+                          {artifact.title ?? artifact.url}
+                        </a>
                       ) : null,
                     )}
                   </div>

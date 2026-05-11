@@ -1,5 +1,5 @@
 import { Hono } from "hono"
-import type { ChatAttachment } from "@time/shared"
+import type { ChatArtifact, ChatAttachment } from "@time/shared"
 import { z } from "zod"
 import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
@@ -110,6 +110,7 @@ const saveMessagesToMemory = async ({
   messages: Array<{
     role: "user" | "assistant"
     content: string
+    artifacts?: ChatArtifact[]
     attachments?: ChatAttachment[]
   }>
 }) => {
@@ -124,12 +125,17 @@ const saveMessagesToMemory = async ({
       createdAt: new Date(),
       threadId,
       resourceId,
-      content: {
-        format: 2 as const,
-        parts: [{ type: "text", text: message.content }],
-        ...(message.attachments?.length
-          ? { metadata: { attachments: message.attachments } }
-          : {}),
+        content: {
+          format: 2 as const,
+          parts: [{ type: "text", text: message.content }],
+          ...(message.artifacts?.length || message.attachments?.length
+            ? {
+                metadata: {
+                  ...(message.artifacts?.length ? { artifacts: message.artifacts } : {}),
+                  ...(message.attachments?.length ? { attachments: message.attachments } : {}),
+                },
+              }
+            : {}),
       },
     })),
   })
@@ -226,13 +232,19 @@ export const chatRoute = new Hono()
           {
             role: "assistant",
             content: result.text,
+            artifacts: result.artifacts,
             attachments: result.attachments,
           },
         ],
       })
 
-      log.debug({ agentConfigId, attachmentCount: result.attachments.length }, "generate.image.result")
-      return ok(c, { text: result.text, attachments: result.attachments, traceId: null })
+      log.debug({ agentConfigId, artifactCount: result.artifacts.length }, "generate.image.result")
+      return ok(c, {
+        text: result.text,
+        artifacts: result.artifacts,
+        attachments: result.attachments,
+        traceId: null,
+      })
     }
 
     const { agent, modelSettings } = await createRuntimeAgent(agentConfigId)

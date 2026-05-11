@@ -4,6 +4,7 @@ import { fail, ok } from "../../lib/response"
 import { ErrorCode } from "../../lib/errors"
 import { createLogger } from "../../lib/logger"
 import { createRuntimeTeam } from "../../mastra/runtime-team"
+import { parseStructuredChatResponse } from "../../services/chat-response-service"
 import { listTeamChatMessages, listTeamChatThreads } from "../../services/team-chat-history-service"
 import { getChatTrace } from "../../services/chat-trace-service"
 
@@ -217,9 +218,19 @@ export const chatTeamRoute = new Hono()
           ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
         }),
       })
-      const text = result.text
-      log.debug({ teamId, textLength: text.length, textPreview: text.slice(0, 200) }, "generate.result")
-      return ok(c, { text, traceId: result.traceId ?? null })
+      const normalized = parseStructuredChatResponse(result.text)
+      log.debug({
+        teamId,
+        textLength: normalized.text.length,
+        artifactCount: normalized.artifacts?.length ?? 0,
+        textPreview: normalized.text.slice(0, 200),
+      }, "generate.result")
+      return ok(c, {
+        text: normalized.text,
+        ...(normalized.artifacts?.length ? { artifacts: normalized.artifacts } : {}),
+        ...(normalized.attachments?.length ? { attachments: normalized.attachments } : {}),
+        traceId: result.traceId ?? null,
+      })
     } catch (err) {
       log.error({ err }, "generate.error")
       throw err

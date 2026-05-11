@@ -1,4 +1,5 @@
 import { copyArtifactTool } from "./copy-artifact-tool"
+import { generateImageTool } from "./generate-image-tool"
 import { getUserTool } from "./get-user-tool"
 import { listUsersTool } from "./list-users-tool"
 import { screenshotTool } from "./screenshot-tool"
@@ -8,6 +9,7 @@ export const defaultAgentTools = {
   listUsers: listUsersTool,
   getUser: getUserTool,
   copyArtifact: copyArtifactTool,
+  generateImage: generateImageTool,
   takeScreenshot: screenshotTool,
   ...agentBrowser.getTools(),
 }

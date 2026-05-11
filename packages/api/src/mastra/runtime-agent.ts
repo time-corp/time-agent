@@ -1,6 +1,7 @@
 import { Agent } from "@mastra/core/agent";
 import type { MastraModelConfig } from "@mastra/core/llm";
 import type { MastraMemory } from "@mastra/core/memory";
+import type { Tool } from "@mastra/core/tools";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 import { DEFAULT_TENANT_ID } from "../lib/entity-context";
@@ -13,7 +14,7 @@ import { resolveEnabledKeysForAgent } from "../services/tool-service";
 import { resolveAssignedSkillPathsForAgent } from "../services/skill-assignment-service";
 import { mastra } from ".";
 import { createAgentWorkspace } from "./workspace";
-import { buildAgentInstructions } from "./instructions";
+import { buildAgentInstructions, type AgentInstructionContext } from "./instructions";
 import { createAgentMemory } from "./memory";
 
 const parseJsonConfig = (value: string) => {
@@ -76,6 +77,8 @@ const resolveProviderModel = (
 export const createRuntimeAgent = async (
   agentConfigId: string,
   subAgents?: Record<string, Agent>,
+  extraTools?: Record<string, Tool<any, any, any, any, any, any, any>>,
+  instructionContext?: AgentInstructionContext,
 ) => {
   log.debug({ agentConfigId }, "createRuntimeAgent.input");
 
@@ -120,8 +123,16 @@ export const createRuntimeAgent = async (
     resolveEnabledKeysForAgent(agentConfig.id, DEFAULT_TENANT_ID),
     resolveAssignedSkillPathsForAgent(agentConfig.id, DEFAULT_TENANT_ID),
   ]);
-  const tools = resolveToolsByKeys(enabledKeys);
-  const instructions = buildAgentInstructions(agentConfig.systemPrompt);
+  const tools = {
+    ...resolveToolsByKeys(enabledKeys),
+    ...(extraTools ?? {}),
+  };
+  const instructions = buildAgentInstructions(agentConfig.systemPrompt, {
+    availableToolKeys: enabledKeys,
+    hasBrowser: enabledKeys.includes("browser") || Object.keys(extraTools ?? {}).some((key) => key.startsWith("browser")),
+    hasScreenshotTool: enabledKeys.includes("take_screenshot") || Object.keys(extraTools ?? {}).includes("takeScreenshot"),
+    ...instructionContext,
+  });
   const workspace = createAgentWorkspace(
     agentConfig.id,
     assignedSkills.map((skill) => skill.path),
@@ -135,6 +146,7 @@ export const createRuntimeAgent = async (
     resolvedModelConfig: resolveProviderModel(provider, agentConfig.modelName),
     enabledKeys: enabledKeys.join(", ") || "(none)",
     runtimeTools: Object.keys(tools).join(", ") || "(none)",
+    instructionContext,
   }, "agent ready");
 
   const agent = new Agent({

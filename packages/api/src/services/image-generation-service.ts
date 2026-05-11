@@ -1,4 +1,4 @@
-import type { ChatAttachment } from "@time/shared";
+import type { ChatArtifact, ChatAttachment } from "@time/shared";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 import { AppError, ErrorCode } from "../lib/errors";
@@ -14,6 +14,9 @@ type XaiImageGenerationResponse = {
     url?: string;
     mime_type?: string;
   }>;
+  usage?: {
+    cost_in_usd_ticks?: number;
+  };
 };
 
 const buildImageGenerationUrl = (baseUrl?: string | null) => {
@@ -56,17 +59,19 @@ export const generateImageForAgent = async ({
 }: {
   agentConfigId: string;
   prompt: string;
-}): Promise<{ text: string; attachments: ChatAttachment[] }> => {
+}): Promise<{ text: string; artifacts: ChatArtifact[]; attachments: ChatAttachment[] }> => {
   if (MOCK_IMAGE_GENERATION) {
+    const artifacts: ChatArtifact[] = [
+      {
+        type: "image",
+        url: MOCK_IMAGE_URL,
+        mimeType: "image/jpeg",
+      },
+    ];
     return {
       text: `Generated 1 image for: ${prompt}`,
-      attachments: [
-        {
-          type: "image",
-          url: MOCK_IMAGE_URL,
-          mimeType: "image/jpeg",
-        },
-      ],
+      artifacts,
+      attachments: artifacts,
     };
   }
 
@@ -139,7 +144,7 @@ export const generateImageForAgent = async ({
   }
 
   const payload = (await response.json()) as XaiImageGenerationResponse;
-  const attachments = (payload.data ?? [])
+  const artifacts: ChatArtifact[] = (payload.data ?? [])
     .filter(
       (item): item is { url: string; mime_type?: string } =>
         typeof item.url === "string" && item.url.length > 0,
@@ -150,7 +155,7 @@ export const generateImageForAgent = async ({
       mimeType: item.mime_type ?? "image/jpeg",
     }));
 
-  if (attachments.length === 0) {
+  if (artifacts.length === 0) {
     throw new AppError(
       ErrorCode.INTERNAL_ERROR,
       "Image generation returned no images",
@@ -159,7 +164,10 @@ export const generateImageForAgent = async ({
   }
 
   return {
-    text: `Generated ${attachments.length} image${attachments.length > 1 ? "s" : ""} for: ${prompt}`,
-    attachments,
+    text: `Generated ${artifacts.length} image${artifacts.length > 1 ? "s" : ""} for: ${prompt}`,
+    artifacts,
+    attachments: artifacts.filter(
+      (artifact): artifact is ChatAttachment => artifact.type === "image",
+    ),
   };
 };
