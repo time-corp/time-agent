@@ -27,20 +27,7 @@ type ChatMemory = {
     title?: string
     metadata?: Record<string, unknown>
   }): Promise<unknown>
-  saveMessages(args: {
-    messages: Array<{
-      id: string
-      role: "user" | "assistant"
-      createdAt: Date
-      threadId: string
-      resourceId: string
-      content: {
-        format: number
-        parts: Array<{ type: "text"; text: string }>
-        metadata?: { attachments?: ChatAttachment[] }
-      }
-    }>
-  }): Promise<unknown>
+  saveMessages(args: Record<string, unknown>): Promise<unknown>
 }
 
 const chatRequestSchema = z.object({
@@ -138,7 +125,7 @@ const saveMessagesToMemory = async ({
       threadId,
       resourceId,
       content: {
-        format: 2,
+        format: 2 as const,
         parts: [{ type: "text", text: message.content }],
         ...(message.attachments?.length
           ? { metadata: { attachments: message.attachments } }
@@ -232,8 +219,8 @@ export const chatRoute = new Hono()
 
       await saveMessagesToMemory({
         memory: resolvedMemory,
-        threadId: parsed.data.threadId,
-        resourceId: parsed.data.resourceId,
+        ...(parsed.data.threadId ? { threadId: parsed.data.threadId } : {}),
+        ...(parsed.data.resourceId ? { resourceId: parsed.data.resourceId } : {}),
         messages: [
           ...parsed.data.messages,
           {
