@@ -6,7 +6,6 @@ import {
   CodeSquare,
   DocumentText,
   Home,
-  Pulse,
   Route,
   Server,
   SettingsMinimalistic,
@@ -69,7 +68,6 @@ export const appSidebarSections: SidebarSection[] = [
         url: "/tools",
         icon: makeIcon(ChatSquareCode),
       },
-      { titleKey: "common.realtime", url: "/realtime", icon: makeIcon(Pulse) },
       { titleKey: "common.logs", url: "/logs", icon: makeIcon(DocumentText) },
       {
         titleKey: "common.terminal",

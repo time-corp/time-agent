@@ -21,8 +21,7 @@ import { chatRoute } from "./routes/chat/route"
 import { chatTeamRoute } from "./routes/chat-team/route"
 import { healthRoute } from "./routes/health";
 import { providersRoute } from "./routes/providers/route"
-import { sseRoute } from "./routes/sse";
-import { wsRoute, websocket } from "./routes/ws";
+import { websocket } from "./routes/ws-server";
 import { terminalRoute } from "./routes/terminal/route";
 import { usersRoute } from "./routes/users/route";
 import { traceMiddleware } from "./middleware/trace";
@@ -37,8 +36,6 @@ const app = new Hono<{ Bindings: HonoBindings; Variables: HonoVariables }>()
   .use("*", cors({ origin: process.env["WEB_URL"] ?? "http://localhost:5173" }))
   .use("*", traceMiddleware)
   .route(`${apiV1}/health`, healthRoute)
-  .route(`${apiV1}/sse`, sseRoute)
-  .route(`${apiV1}/ws`, wsRoute)
   .route(`${apiV1}/terminal`, terminalRoute)
   .route(`${apiV1}/users`, usersRoute)
   .route(`${apiV1}/providers`, providersRoute)

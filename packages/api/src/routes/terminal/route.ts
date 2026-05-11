@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { ServerWebSocket, FileSink } from "bun";
 import path from "node:path";
-import { upgradeWebSocket } from "../ws";
+import { upgradeWebSocket } from "../ws-server";
 
 type WS = ServerWebSocket<unknown>;
 
